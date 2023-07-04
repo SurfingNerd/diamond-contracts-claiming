@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/DMDcoin/diamond-contracts-claiming/issues"
   },
-  "homepage": "https://github.com/DMDcoin/diamond-contracts-claiming#readme"
+  "homepage": "https://github.com/DMDcoin/diamond-contracts-claiming#readme",
+  "devDependencies": {
+    "hardhat": "^2.16.1"
+  }
 }
