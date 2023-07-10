@@ -4,8 +4,8 @@
   "description": "claiming contracts",
   "main": "index.js",
   "scripts": {
-    
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test"
   },
   "repository": {
     "type": "git",
