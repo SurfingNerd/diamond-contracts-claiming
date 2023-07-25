@@ -19,9 +19,7 @@
   "homepage": "https://github.com/DMDcoin/diamond-contracts-claiming#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "hardhat": "^2.16.1"
-  },
-  "dependencies": {
+    "hardhat": "^2.16.1",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.1"
   }
 }
