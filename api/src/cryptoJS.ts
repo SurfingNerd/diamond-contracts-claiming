@@ -1,10 +1,8 @@
 
-import base58check from 'base58check';
+import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
 import { hexToBuf, prefixBuf } from './cryptoHelpers'
-
-var bs58check = require('bs58check');
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
 //var bs58check = require('bs58check');
@@ -57,9 +55,10 @@ export class CryptoJS {
   public dmdAddressToRipeResult(address: string) : Buffer {
 
     this.log('address:', address);
-    const decoded  = base58check.decode(address);
+    const decoded  = bs58check.decode(address);
     this.log('decoded:', decoded);
-    return decoded.data;
+    let buffer = Buffer.from(decoded);
+    return buffer;
   }
   
   public signatureBase64ToRSV(signatureBase64: string) : { r: Buffer, s: Buffer, v: number }
