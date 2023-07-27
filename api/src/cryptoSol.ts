@@ -1,11 +1,15 @@
 
-import Web3 from 'web3';
-import { ClaimContract } from '../contracts/ClaimContract';
-import ClaimContractAbi from '../../build/contracts/ClaimContract.json';
+import { ClaimContract } from '../../typechain-types/index';
+// import ClaimContractAbi from '../../build/contracts/ClaimContract.json';
 import { ensure0x, stringToUTF8Hex } from './cryptoHelpers';
-import BN from 'bn.js';
+// import BN from 'bn.js';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
+
+
+import { ethers } from "hardhat";
+
+import { BigNumber } from "ethers";
 
 /**
  * Crypto functions used in this project implemented in Soldity.
@@ -17,19 +21,20 @@ export class CryptoSol {
   private logDebug: boolean = false; 
 
 
-  public static fromContractAddress(web3: Web3, contractAddress: string) : CryptoSol { 
+  public static async fromContractAddress(contractAddress: string) : Promise<CryptoSol> { 
 
-    const abi: any = ClaimContractAbi.abi;
-    const contract : any = new web3.eth.Contract(abi, contractAddress);
-    return new CryptoSol(web3, contract);
+    
+    //const contract : any = new web3.eth.Contract(abi, contractAddress);
+
+    const contract = await ethers.getContractAt("ClaimContract", contractAddress);
+    return new CryptoSol(contract);
   }
 
-  public constructor(public web3Instance: Web3, public instance : ClaimContract) {
+  public constructor(public instance : ClaimContract) {
     
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
     }
-
   }
 
   public setLogDebug(value: boolean) {
@@ -56,7 +61,8 @@ export class CryptoSol {
   public async addressToClaimMessage(address: string, postfix: string = '') : Promise<string> {
 
     const postfixHex = stringToUTF8Hex(postfix);
-    const claimMessage =  await this.instance.methods.createClaimMessage(address, true, postfixHex).call();
+    
+    const claimMessage =  await this.instance.createClaimMessage(address, true, postfixHex);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
@@ -65,7 +71,8 @@ export class CryptoSol {
   public async messageToHash(messageString: string) {
 
     const buffer = Buffer.from(messageString, 'utf-8');
-    const hash =  await this.instance.methods.calcHash256(buffer.toString('hex')).call();
+    
+    const hash =  await this.instance.calcHash256(buffer.toString('hex'), {} );
     this.log('messageToHash');
     this.log(hash);
     return hash;
@@ -84,7 +91,7 @@ export class CryptoSol {
     Promise<boolean>
     {
       const result = 
-        await this.instance.methods.claimMessageMatchesSignature(
+        await this.instance.claimMessageMatchesSignature(
           claimToAddress, 
           addressContainsChecksum,
           stringToUTF8Hex(postfix),
@@ -92,7 +99,7 @@ export class CryptoSol {
           ensure0x(pubkeyY),
           ensure0x(sigV),
           ensure0x(sigR),
-          ensure0x(sigS)).call();
+          ensure0x(sigS));
       this.log('Claim Result: ', result);
       return result;
     }
@@ -106,14 +113,14 @@ export class CryptoSol {
       sigS: string | Buffer) 
       : Promise<string> {
 
-      return this.instance.methods.getEthAddressFromSignature(
+      return this.instance.getEthAddressFromSignature(
         claimToAddress, 
         addressContainsChecksum,
         stringToUTF8Hex(postfix),
         ensure0x(sigV),
         ensure0x(sigR), 
         ensure0x(sigS)
-      ).call();
+      );
     }
 
     /**
@@ -122,25 +129,25 @@ export class CryptoSol {
      * @param y Y coordinate of the ECDSA public key
      * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
      */
-    async publicKeyToBitcoinAddressEssential(x: BN, y: BN) : Promise<string> {
+    async publicKeyToBitcoinAddressEssential(x: BigNumber, y: BigNumber) : Promise<string> {
       const legacyCompressedEnumValue = 1;
-      return this.instance.methods.publicKeyToBitcoinAddress(
+      return this.instance.publicKeyToBitcoinAddress(
         '0x' + x.toString('hex'),
-        '0x' + y.toString('hex'), legacyCompressedEnumValue).call();
+        '0x' + y.toString('hex'), legacyCompressedEnumValue);
     }
 
-    async publicKeyToBitcoinAddress(x: BN, y: BN, addressPrefix: string) {
+    async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
       const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
       return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
     }
 
     public async pubKeyToEthAddress(x: string, y: string) {
-      return this.instance.methods.pubKeyToEthAddress(x, y).call();
+      return this.instance.pubKeyToEthAddress(x, y);
     }
 
     public async prefixString() {
 
-      const bytes = await this.instance.methods.prefixStr().call();
+      const bytes = await this.instance.prefixStr();
       const buffer = hexToBuf(bytes);
       return new TextDecoder("utf-8").decode(buffer);
 
@@ -149,22 +156,27 @@ export class CryptoSol {
 
     public async addBalance(dmdV3Address: string, value: string) {
 
-      const accounts = await this.web3Instance.eth.getAccounts();
-      const fromAccount = accounts[0];
+      const signers = await ethers.getSigners();
+      //const accounts = await this.web3Instance.eth.getAccounts();
+      const fromAccount = signers[0];
       const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
       console.log('add balance call..');
-      await this.instance.methods.addBalance(ensure0x(ripe)).send({ value: value, from: fromAccount});
+
+      await this.instance.addBalance(ensure0x(ripe), {value: value, from: fromAccount});
     }
 
     public async getBalance(dmdV3Address: string) {
 
       const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-      return await this.instance.methods.balances(ensure0x(ripe)).call();
+      return await this.instance.balances(ensure0x(ripe));
     }
 
     public async getContractBalance() {
+      
+      const address = await this.instance.getAddress();
+      // get the balance of ths address.
 
-      return await this.web3Instance.eth.getBalance(this.instance.options.address);
+      return await ethers.provider.getBalance(address);
     }
   
 }
