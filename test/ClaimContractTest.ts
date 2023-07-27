@@ -1,4 +1,6 @@
 import { ethers, network } from "hardhat";
+// import type { ethers } from "ethers";
+import { BigNumber } from "ethers";
 
 const TestFunctions = require('../api/tests/testFunctions');
 const CryptoSol = require('../api/src/cryptoSol');
@@ -10,7 +12,6 @@ import {
     ClaimContract
 } from "../typechain-types/index";
 
-import { BigNumber } from "ethers";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 

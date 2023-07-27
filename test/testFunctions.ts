@@ -4,17 +4,17 @@ import Web3 from 'web3';
 import sha256 from 'js-sha256'
 import { expect, assert } from 'chai';
 import varuint from'varuint-bitcoin';
-import { CryptoJS } from '../src/cryptoJS';
+import { CryptoJS } from '../api/src/cryptoJS';
 import EC from 'elliptic';
-import { CryptoSol } from '../src/cryptoSol';
+import { CryptoSol } from '../api/src/cryptoSol';
 import BN = require('bn.js');
-import { remove0x } from '../src/cryptoHelpers';
+import { remove0x } from '../api/src/cryptoHelpers';
 import ECPairFactory from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
+import type { ethers } from "ethers";
+
 const ECPair = ECPairFactory(ecc);
 
-import bitcoin from "bitcoinjs-lib";
-// const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
 
 
@@ -25,7 +25,7 @@ export class TestFunctions {
 
   private logDebug: boolean = false; 
 
-  public constructor(public web3Instance: Web3, public instance : ClaimContract.ClaimContract) {
+  public constructor(public ethers: ethers, public instance : ClaimContract.ClaimContract) {
     
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
