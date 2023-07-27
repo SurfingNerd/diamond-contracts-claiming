@@ -2,7 +2,7 @@
 
 import Web3 from "web3";
 import { CryptoSol } from "../src/cryptoSol";
-import   { TestFunctions } from "./testFunctions";
+import   { TestFunctions } from "../../test/testFunctions";
 
 export async function fillTestData(web3: Web3) {
 
