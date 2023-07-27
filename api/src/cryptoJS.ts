@@ -7,7 +7,10 @@ import { hexToBuf, prefixBuf } from './cryptoHelpers'
 //var bs58check = require('bs58check');
 
 const bitcoinMessage = require('bitcoinjs-message');
-const secp256k1 = require('secp256k1')
+// const secp256k1 = require('secp256k1')
+
+import * as secp256k1 from "secp256k1";
+import { ethers } from 'hardhat';
 
 const SEGWIT_TYPES = {
   P2WPKH: 'p2wpkh',
@@ -143,19 +146,19 @@ export class CryptoJS {
 
     const hash = bitcoinMessage.magicHash(messageContent);
 
-    const publicKey = secp256k1.recover(
-      hash,
+    const publicKey = secp256k1.ecdsaRecover(
       parsed.signature,
       parsed.recovery,
+      hash,
       parsed.compressed
-    )
+    );
 
     //we now have the public key
     //public key is the X Value with a prefix.
     //it's 02 or 03 prefix, depending if y is ODD or not.
-    this.log("publicKey: ", publicKey.toString('hex'));
+    this.log("publicKey: ", ethers.utils.hexlify(publicKey));
 
-    const x = publicKey.slice(1).toString('hex');
+    const x = ethers.utils.hexlify(publicKey.slice(1));
     this.log("x: " + x);
 
 
@@ -166,7 +169,7 @@ export class CryptoJS {
 
     this.log("y: " + y);
 
-    return { publicKey: publicKey.toString('hex'), x, y };
+    return { publicKey: ethers.utils.hexlify(publicKey), x, y };
   }
 
 
@@ -193,5 +196,4 @@ export class CryptoJS {
 
     return bs58Result;
   }
-
 }
