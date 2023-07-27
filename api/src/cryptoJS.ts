@@ -1,4 +1,3 @@
-
 import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
@@ -21,10 +20,10 @@ const SEGWIT_TYPES = {
  */
 export class CryptoJS {
 
-  private logDebug: boolean = false; 
-  
+  private logDebug: boolean = false;
+
   public constructor() {
-    
+
   }
 
   public setLogDebug(value: boolean) {
@@ -48,25 +47,23 @@ export class CryptoJS {
   }
 
   /**
-   * 
+   *
    * @param address dmd or bitcoin style address.
    * @return Buffer with the significant bytes of the public key, not including the version number prefix, or the checksum postfix.
    */
-  public dmdAddressToRipeResult(address: string) : Buffer {
-
+  public dmdAddressToRipeResult(address: string): Buffer {
     this.log('address:', address);
-    const decoded  = bs58check.decode(address);
+    const decoded = bs58check.decode(address);
     this.log('decoded:', decoded);
     let buffer = Buffer.from(decoded);
     return buffer;
   }
-  
-  public signatureBase64ToRSV(signatureBase64: string) : { r: Buffer, s: Buffer, v: number }
-  {
+
+  public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer, v: number } {
     //var ec = new EC.ec('secp256k1');
 
     //const input = new EC. SignatureInput();
-    
+
 
     // const signature = new EC.ec.Signature(signatureBase64, 'base64');
 
@@ -82,13 +79,13 @@ export class CryptoJS {
 
     // where is the encoding of the signature documented ?
     //is that DER encoding ? Or the Significant part of DER ?
-    
+
     const sig = Buffer.from(signatureBase64, 'base64');
 
     this.log('sigBuffer:');
     this.log(sig.toString('hex'));
 
-    //thesis: 
+    //thesis:
     // 20 is a header, and v is not included in the signature ?
     const sizeOfRComponent = sig[0];
     this.log('sizeOfR:', sizeOfRComponent);
@@ -97,7 +94,7 @@ export class CryptoJS {
     const sStart = 1 + sizeOfRComponent;
     const sizeOfSComponent = sig.length - sStart;
     this.log('sizeOfS:', sizeOfSComponent);
-    
+
     if (sizeOfRComponent > sig.length) {
       throw new Error('sizeOfRComponent is too Big!!');
     }
@@ -113,7 +110,7 @@ export class CryptoJS {
   }
 
 
-  public decodeSignature (buffer : Buffer) {
+  public decodeSignature(buffer: Buffer) {
 
     if (buffer.length !== 65) throw new Error('Invalid signature length')
 
@@ -134,8 +131,8 @@ export class CryptoJS {
     }
   }
 
-  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string) : {publicKey: string, x: string, y: string} {
-    
+  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string): { publicKey: string, x: string, y: string } {
+
     //const signatureBase64 = "IBHr8AT4TZrOQSohdQhZEJmv65ZYiPzHhkOxNaOpl1wKM/2FWpraeT8L9TaphHI1zt5bI3pkqxdWGcUoUw0/lTo=";
     //const address = "";
 
@@ -161,7 +158,7 @@ export class CryptoJS {
     const x = publicKey.slice(1).toString('hex');
     this.log("x: " + x);
 
-        
+
     var ec = new EC.ec('secp256k1');
 
     const key = ec.keyFromPublic(publicKey);
@@ -169,20 +166,20 @@ export class CryptoJS {
 
     this.log("y: " + y);
 
-    return {publicKey: publicKey.toString('hex'), x, y};
+    return { publicKey: publicKey.toString('hex'), x, y };
   }
 
 
-  public getXYfromPublicKeyHex(publicKeyHex: string) : { x: BN; y: BN; } {
+  public getXYfromPublicKeyHex(publicKeyHex: string): { x: BN; y: BN; } {
     var ec = new EC.ec('secp256k1');
     var publicKey = ec.keyFromPublic(publicKeyHex.toLowerCase(), 'hex').getPublic();
     var x = publicKey.getX();
     var y = publicKey.getY();
-    
+
     //this.log("pub key:" + publicKey.toString('hex'));
     //this.log("x :" + x.toString('hex'));
     //this.log("y :" + y.toString('hex'));
-    return { x, y};
+    return { x, y };
   }
 
   public bitcoinAddressEssentialToFullQualifiedAddress(essentialPart: string, addressPrefix = '00') {
@@ -191,9 +188,9 @@ export class CryptoJS {
     let result = hexToBuf(essentialPart);
     result = prefixBuf(result, addressPrefix);
     //this.log('with prefix: ' + result.toString('hex'));
-    
+
     const bs58Result = bs58check.encode(result);
-    
+
     return bs58Result;
   }
 

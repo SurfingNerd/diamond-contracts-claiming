@@ -1,4 +1,3 @@
-
 //just a file that speeds up the testing routines for functions that don't require the blockchain.
 
 import { CryptoJS } from '../src/cryptoJS';

@@ -1,37 +1,34 @@
+import { ethers } from "hardhat";
+import { BigNumber } from "ethers";
 
 import { ClaimContract } from '../../typechain-types/index';
-// import ClaimContractAbi from '../../build/contracts/ClaimContract.json';
+
 import { ensure0x, stringToUTF8Hex } from './cryptoHelpers';
-// import BN from 'bn.js';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 
-
-import { ethers } from "hardhat";
-
-import { BigNumber } from "ethers";
 
 /**
  * Crypto functions used in this project implemented in Soldity.
  */
 export class CryptoSol {
-  
+
   public cryptoJS = new CryptoJS();
-  
-  private logDebug: boolean = false; 
+
+  private logDebug: boolean = false;
 
 
-  public static async fromContractAddress(contractAddress: string) : Promise<CryptoSol> { 
+  public static async fromContractAddress(contractAddress: string): Promise<CryptoSol> {
 
-    
+
     //const contract : any = new web3.eth.Contract(abi, contractAddress);
 
     const contract = await ethers.getContractAt("ClaimContract", contractAddress);
     return new CryptoSol(contract);
   }
 
-  public constructor(public instance : ClaimContract) {
-    
+  public constructor(public instance: ClaimContract) {
+
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
     }
@@ -58,11 +55,11 @@ export class CryptoSol {
    * see also: https://bitcoin.stackexchange.com/questions/77324/how-are-bitcoin-signed-messages-generated
    * @param address Ethereum style address, include checksum information.
    */
-  public async addressToClaimMessage(address: string, postfix: string = '') : Promise<string> {
+  public async addressToClaimMessage(address: string, postfix: string = ''): Promise<string> {
 
     const postfixHex = stringToUTF8Hex(postfix);
-    
-    const claimMessage =  await this.instance.createClaimMessage(address, true, postfixHex);
+
+    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
@@ -71,8 +68,8 @@ export class CryptoSol {
   public async messageToHash(messageString: string) {
 
     const buffer = Buffer.from(messageString, 'utf-8');
-    
-    const hash =  await this.instance.calcHash256(buffer.toString('hex'), {} );
+
+    const hash = await this.instance.calcHash256(buffer.toString('hex'), {});
     this.log('messageToHash');
     this.log(hash);
     return hash;
@@ -87,96 +84,96 @@ export class CryptoSol {
     pubkeyY: string,
     sigV: string,
     sigR: string,
-    sigS: string) :
-    Promise<boolean>
-    {
-      const result = 
-        await this.instance.claimMessageMatchesSignature(
-          claimToAddress, 
-          addressContainsChecksum,
-          stringToUTF8Hex(postfix),
-          ensure0x(pubkeyX),
-          ensure0x(pubkeyY),
-          ensure0x(sigV),
-          ensure0x(sigR),
-          ensure0x(sigS));
-      this.log('Claim Result: ', result);
-      return result;
-    }
-
-    public async getEthAddressFromSignature(
-      claimToAddress: string,
-      addressContainsChecksum: boolean,
-      postfix: string,
-      sigV: string,
-      sigR: string | Buffer,
-      sigS: string | Buffer) 
-      : Promise<string> {
-
-      return this.instance.getEthAddressFromSignature(
-        claimToAddress, 
+    sigS: string):
+    Promise<boolean> {
+    const result =
+      await this.instance.claimMessageMatchesSignature(
+        claimToAddress,
         addressContainsChecksum,
         stringToUTF8Hex(postfix),
+        ensure0x(pubkeyX),
+        ensure0x(pubkeyY),
         ensure0x(sigV),
-        ensure0x(sigR), 
-        ensure0x(sigS)
-      );
-    }
+        ensure0x(sigR),
+        ensure0x(sigS));
+    this.log('Claim Result: ', result);
+    return result;
+  }
 
-    /**
-     * returns the essential part of a Bitcoin-style legacy compressed address associated with the given ECDSA public key
-     * @param x X coordinate of the ECDSA public key
-     * @param y Y coordinate of the ECDSA public key
-     * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
-     */
-    async publicKeyToBitcoinAddressEssential(x: BigNumber, y: BigNumber) : Promise<string> {
-      const legacyCompressedEnumValue = 1;
-      return this.instance.publicKeyToBitcoinAddress(
-        '0x' + x.toString('hex'),
-        '0x' + y.toString('hex'), legacyCompressedEnumValue);
-    }
+  public async getEthAddressFromSignature(
+    claimToAddress: string,
+    addressContainsChecksum: boolean,
+    postfix: string,
+    sigV: string,
+    sigR: string | Buffer,
+    sigS: string | Buffer)
+    : Promise<string> {
 
-    async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
-      const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
-      return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
-    }
+    return this.instance.getEthAddressFromSignature(
+      claimToAddress,
+      addressContainsChecksum,
+      stringToUTF8Hex(postfix),
+      ensure0x(sigV),
+      ensure0x(sigR),
+      ensure0x(sigS)
+    );
+  }
 
-    public async pubKeyToEthAddress(x: string, y: string) {
-      return this.instance.pubKeyToEthAddress(x, y);
-    }
+  /**
+   * returns the essential part of a Bitcoin-style legacy compressed address associated with the given ECDSA public key
+   * @param x X coordinate of the ECDSA public key
+   * @param y Y coordinate of the ECDSA public key
+   * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
+   */
+  async publicKeyToBitcoinAddressEssential(x: BigNumber, y: BigNumber): Promise<string> {
+    const legacyCompressedEnumValue = 1;
 
-    public async prefixString() {
+    return this.instance.publicKeyToBitcoinAddress(
+      x.toHexString(),
+      y.toHexString(),
+      legacyCompressedEnumValue
+    );
+  }
 
-      const bytes = await this.instance.prefixStr();
-      const buffer = hexToBuf(bytes);
-      return new TextDecoder("utf-8").decode(buffer);
+  async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
+    const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
+    return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
+  }
 
-      //return stringToUTF8Hex
-    }
+  public async pubKeyToEthAddress(x: string, y: string) {
+    return this.instance.pubKeyToEthAddress(x, y);
+  }
 
-    public async addBalance(dmdV3Address: string, value: string) {
+  public async prefixString() {
 
-      const signers = await ethers.getSigners();
-      //const accounts = await this.web3Instance.eth.getAccounts();
-      const fromAccount = signers[0];
-      const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-      console.log('add balance call..');
+    const bytes = await this.instance.prefixStr();
+    const buffer = hexToBuf(bytes);
+    return new TextDecoder("utf-8").decode(buffer);
 
-      await this.instance.addBalance(ensure0x(ripe), {value: value, from: fromAccount});
-    }
+    //return stringToUTF8Hex
+  }
 
-    public async getBalance(dmdV3Address: string) {
+  public async addBalance(dmdV3Address: string, value: string) {
 
-      const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-      return await this.instance.balances(ensure0x(ripe));
-    }
+    const signers = await ethers.getSigners();
+    //const accounts = await this.web3Instance.eth.getAccounts();
+    const fromAccount = signers[0];
+    const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
+    console.log('add balance call..');
 
-    public async getContractBalance() {
-      
-      const address = await this.instance.getAddress();
-      // get the balance of ths address.
+    await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value });
+  }
 
-      return await ethers.provider.getBalance(address);
-    }
-  
+  public async getBalance(dmdV3Address: string) {
+
+    const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
+    return await this.instance.balances(ensure0x(ripe));
+  }
+
+  public async getContractBalance() {
+    const address = this.instance.address;
+    // get the balance of ths address.
+
+    return await ethers.provider.getBalance(address);
+  }
 }
