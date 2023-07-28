@@ -1,9 +1,12 @@
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
-    enum AddressType {LegacyUncompressed, LegacyCompressed, SegwitUncompressed, SegwitCompressed}
-
-    event Claim(bytes20 indexed _from, address _to, uint256 amount, uint256 _nominator, uint256 _denominator);
+    enum AddressType {
+        LegacyUncompressed,
+        LegacyCompressed,
+        SegwitUncompressed,
+        SegwitCompressed
+    }
 
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
 
@@ -21,7 +24,6 @@ contract ClaimContract {
 
     uint256 public constant YEAR_IN_SECONDS = 31536000;
     uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
-    uint256 public constant DAY_IN_SECONDS = 86400;
 
     mapping(bytes20 => uint256) public balances;
 
@@ -50,6 +52,14 @@ contract ClaimContract {
     /// using another prefix makes old signatures invalid.
     bytes public prefixStr;
 
+    event Claim(
+        bytes20 indexed _from,
+        address _to,
+        uint256 amount,
+        uint256 _nominator,
+        uint256 _denominator
+    );
+
     constructor(
         address payable _lateClaimBeneficorAddressReinsertPot,
         address payable _lateClaimBeneficorAddressDAO,
@@ -73,8 +83,8 @@ contract ClaimContract {
         // we verify if the transfered amount that get added to the sum up to the total amount added.
         uint256 totalBalanceAdded = 0;
 
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            require(_accounts[i] != bytes20(0x0000000000000000000000000000000000000000), "Account cannot be 0x0!");
+        for (uint256 i = 0; i < _accounts.length; ++i) {
+            require(_accounts[i] != bytes20(address(0)), "Account cannot be 0x0!");
             require(_balances[i] != 0, "Balance cannot be 0!");
             require(balances[_accounts[i]] == 0, "Balance is defined multiple times for an account.");
             totalBalanceAdded += _balances[i];
@@ -342,11 +352,11 @@ contract ClaimContract {
     }
 
     function getDilutionTimestamp1() public view returns (uint256) {
-        return deploymentTimestamp + (DAY_IN_SECONDS * 2 * 31) + DAY_IN_SECONDS * 30;
+        return deploymentTimestamp + (1 days * 2 * 31) + 1 days * 30;
     }
 
     function getDilutionTimestamp2() public view returns (uint256) {
-        return deploymentTimestamp + (DAY_IN_SECONDS * 3 * 31) + (DAY_IN_SECONDS * 3 * 30);
+        return deploymentTimestamp + (1 days * 3 * 31) + (1 days * 3 * 30);
     }
 
     function getDilutionTimestamp3() public view returns (uint256) {
@@ -489,6 +499,12 @@ contract ClaimContract {
         balances[oldAddress] = 0;
         _targetAdress.transfer(claimBalance);
 
-        emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
+        emit Claim(
+            oldAddress,
+            _targetAdress,
+            claimBalance,
+            nominator,
+            denominator
+        );
     }
 }
