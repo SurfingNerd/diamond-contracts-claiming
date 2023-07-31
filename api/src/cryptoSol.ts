@@ -159,7 +159,6 @@ export class CryptoSol {
     //const accounts = await this.web3Instance.eth.getAccounts();
     const fromAccount = signers[0];
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-    console.log('add balance call..');
 
     await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value });
   }

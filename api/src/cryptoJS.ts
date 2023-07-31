@@ -2,6 +2,7 @@ import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
 import { hexToBuf, prefixBuf } from './cryptoHelpers'
+import varuint from 'varuint-bitcoin';
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
 //var bs58check = require('bs58check');
@@ -57,8 +58,9 @@ export class CryptoJS {
   public dmdAddressToRipeResult(address: string): Buffer {
     this.log('address:', address);
     const decoded = bs58check.decode(address);
-    this.log('decoded:', decoded);
-    let buffer = Buffer.from(decoded);
+
+    // Assume first byte is version number
+    let buffer = Buffer.from(decoded.slice(1));
     return buffer;
   }
 
@@ -195,5 +197,21 @@ export class CryptoJS {
     const bs58Result = bs58check.encode(result);
 
     return bs58Result;
+  }
+
+  public getBitcoinSignedMessageMagic(message: string) {
+    const messagePrefix = '\u0018Bitcoin Signed Message:\n';
+    const messagePrefixBuffer = Buffer.from(messagePrefix, 'utf8');;
+    const messageBuffer = Buffer.from(message, 'utf8');
+    const messageVISize = varuint.encodingLength(message.length);
+
+    const buffer = Buffer.allocUnsafe(
+      messagePrefix.length + messageVISize + message.length
+    );
+
+    messagePrefixBuffer.copy(buffer, 0);
+    varuint.encode(message.length, buffer, messagePrefix.length);
+    messageBuffer.copy(buffer, messagePrefix.length + messageVISize);
+    return buffer;
   }
 }
