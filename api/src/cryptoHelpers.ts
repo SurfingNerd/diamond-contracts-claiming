@@ -1,4 +1,3 @@
-
 export function remove0x(input: string) {
   if (input.startsWith('0x')) {
     return input.substring(2);
@@ -20,10 +19,11 @@ export function ensure0x(input: string | Buffer) {
 }
 
 
-export function hexToBuf(input: string) : Buffer {
+export function hexToBuf(input: string): Buffer {
   if (input == null) {
     return Buffer.alloc(0);
   }
+
   return Buffer.from(remove0x(input), 'hex');
 }
 
@@ -34,8 +34,6 @@ export function prefixBuf(inputBuffer: Buffer, prefixHexString: string) {
 }
 
 
-export function stringToUTF8Hex(input: string) : string {
-
+export function stringToUTF8Hex(input: string): string {
   return ensure0x(Buffer.from(input, 'utf8'));
-  
 }
