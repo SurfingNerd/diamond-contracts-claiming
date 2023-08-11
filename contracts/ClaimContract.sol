@@ -25,6 +25,10 @@ contract ClaimContract {
     uint256 public constant YEAR_IN_SECONDS = 31536000;
     uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
 
+    uint256 public dilute_s1_75_timestamp;
+    uint256 public dilute_s2_50_timestamp;
+    uint256 public dilute_s3_0_timestamp;
+
     mapping(bytes20 => uint256) public balances;
 
     /* solhint-disable var-name-mixedcase */
@@ -63,7 +67,10 @@ contract ClaimContract {
     constructor(
         address payable _lateClaimBeneficorAddressReinsertPot,
         address payable _lateClaimBeneficorAddressDAO,
-        bytes memory _prefixStr
+        bytes memory _prefixStr,
+        uint256 _dilute_s1_75_timestamp,
+        uint256 _dilute_s2_50_timestamp,
+        uint256 _dilute_s3_0_timestamp
     ) {
         require(
             _lateClaimBeneficorAddressReinsertPot != address(0),
@@ -79,6 +86,14 @@ contract ClaimContract {
 
         prefixStr = _prefixStr;
         deploymentTimestamp = block.timestamp;
+
+        require(_dilute_s1_75_timestamp > block.timestamp, "dilute_s1_75_timestamp must be in future");
+        require(_dilute_s2_50_timestamp > _dilute_s1_75_timestamp, "dilute_s2_50_timestamp must be greater than dilute_s1_75_timestamp");
+        require(_dilute_s3_0_timestamp > _dilute_s2_50_timestamp, "dilute_s3_0_timestamp must be greater than dilute_s2_50_timestamp");
+
+        dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
+        dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
+        dilute_s3_0_timestamp = _dilute_s3_0_timestamp;
     }
 
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
@@ -353,15 +368,15 @@ contract ClaimContract {
     }
 
     function getDilutionTimestamp1() public view returns (uint256) {
-        return deploymentTimestamp + (1 days * 2 * 31) + 1 days * 30;
+        return dilute_s1_75_timestamp;
     }
 
     function getDilutionTimestamp2() public view returns (uint256) {
-        return deploymentTimestamp + (1 days * 3 * 31) + (1 days * 3 * 30);
+        return dilute_s2_50_timestamp;
     }
 
     function getDilutionTimestamp3() public view returns (uint256) {
-        return deploymentTimestamp + (YEAR_IN_SECONDS * 4) + LEAP_YEAR_IN_SECONDS;
+        return dilute_s3_0_timestamp;
     }
 
     function getCurrentDilutedClaimFactor()

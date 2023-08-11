@@ -20,6 +20,16 @@ import { getTestBalances } from "./fixtures/balances";
 const ECPair = ECPairFactory(ecc);
 
 
+function getDilluteTimestamps() : {dillute1: number, dillute2: number, dillute3: number} {
+    let now = Math.floor(Date.now() / 1000);
+    let dillute1 = now + (86400 * 2 * 31) + 86400 * 30;
+    let dillute2 = now + (86400 * 3 * 31) + (86400 * 3 * 30);
+    let dillute3 = now + (86400 * 4 * 365) + (86400 * 366);
+    return {dillute1, dillute2, dillute3};
+
+}
+
+
 describe('ClaimContract', () => {
     let signers: SignerWithAddress[];
 
@@ -30,7 +40,9 @@ describe('ClaimContract', () => {
 
     async function deployClaiming(claimBeneficorAddress: string, beneficorDAOAddress: string, prefix: string) {
         const contractFactory = await ethers.getContractFactory("ClaimContract");
-        const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix);
+        let dilluteTimestamps = getDilluteTimestamps();
+
+        const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
 
         await claimContract.deployed();
 
@@ -92,26 +104,37 @@ describe('ClaimContract', () => {
         it('should revert deploy with beneficor address = 0x0', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
+            let dilluteTimestamps = getDilluteTimestamps();
             await expect(
-                contractFactory.deploy(ethers.constants.AddressZero, lateClaimBeneficorDAO, '0x')
+                contractFactory.deploy(ethers.constants.AddressZero, lateClaimBeneficorDAO, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
             ).to.be.revertedWith("Beneficor Address Reinsert Pot must not be 0x0");
         });
 
         it('should revert deploy with beneficior DAO address = 0x0', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
-
+            let dilluteTimestamps = getDilluteTimestamps();
             await expect(
-                contractFactory.deploy(lateClaimBeneficorAddress, ethers.constants.AddressZero, '0x')
+                contractFactory.deploy(lateClaimBeneficorAddress, ethers.constants.AddressZero, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
             ).to.be.revertedWith("Beneficor Address DAO must not be 0x0");
         });
 
         it('should deploy contract', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
+            // get current timestamp:
+            // dillute1 =  deploymentTimestamp + (1 days * 2 * 31) + 1 days * 30;
+            // dillute2 =  deploymentTimestamp + (1 days * 3 * 31) + (1 days * 3 * 30);
+            // dillute3 =  deploymentTimestamp + (YEAR_IN_SECONDS * 4) + LEAP_YEAR_IN_SECONDS;
+
+            let dilluteTimestamps = getDilluteTimestamps();
+
             const contract = await contractFactory.deploy(
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
-                '0x'
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute3
             );
 
             expect(await contract.deployed());
