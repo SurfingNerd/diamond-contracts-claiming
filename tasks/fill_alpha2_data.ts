@@ -13,7 +13,8 @@ import { task } from "hardhat/config";
 // the last chunk that cannot hold 10.000 dmd will hold the rest.
 
 
-task("fill-claiming-pot", "fills the claiming pot.").setAction(async (taskArgs, hre) => {
+
+task("fill", "fills the claiming pot.").setAction(async (taskArgs, hre) => {
 
 
     let claimBeneficorAddress = "0x2000000000000000000000000000000000000001";
