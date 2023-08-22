@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomiclabs/hardhat-ethers";
 import fs from "fs";
 
 
@@ -8,6 +9,11 @@ let mnemonic = 'inspire school random normal account steel strike shove close al
 if (fs.existsSync(".mnemonic")) {
   mnemonic = fs.readFileSync(".mnemonic").toString().trim();
 }
+
+//require('./tasks');
+//require("@nomicfoundation/hardhat-toolbox");
+require('./tasks/fill_alpha2_data.ts');
+
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",

@@ -2,6 +2,11 @@
 // get the memonic used from env variable.
 
 import { task } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+// import { ethers } from "hardhat";
+
+require("@nomiclabs/hardhat-ethers");
 
  // figure out exact numbers.
 // 
@@ -14,14 +19,11 @@ import { task } from "hardhat/config";
 
 
 
-task("fill", "fills the claiming pot.").setAction(async (taskArgs, hre) => {
+task("fill", "fills the claiming pot.").setAction(async (hre: HardhatRuntimeEnvironment) => {
 
 
     let claimBeneficorAddress = "0x2000000000000000000000000000000000000001";
     let beneficorDAOAddress = "0xDA0da0da0Da0Da0Da0DA00DA0da0da0DA0DA0dA0";
-
-    
-
 
     //let dillute1 =
     let speedUpMultiplier = 1 / 60;
@@ -31,10 +33,7 @@ task("fill", "fills the claiming pot.").setAction(async (taskArgs, hre) => {
     const dillute2 = 6 * month * speedUpMultiplier;
     const dillute3 = 5 * 12 * month * speedUpMultiplier;
 
-    
-
-
-    const contractFactory = await hre.ethers.getContractFactory("ClaimContract");
+    const contractFactory = await ethers.getContractFactory("ClaimContract");
     const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, "", dillute1, dillute2, dillute3);
 
 
@@ -45,7 +44,7 @@ task("fill", "fills the claiming pot.").setAction(async (taskArgs, hre) => {
 
     let currentBalance = signers[0].getBalance();
 
-    let currentPotBN = ethers.utils.parseEther(currentPot.toString());
+    let currentPotBN = hre.ethers.utils.parseEther(currentPot.toString());
 
     console.log('Pot: ', currentPotBN.toString());
 
