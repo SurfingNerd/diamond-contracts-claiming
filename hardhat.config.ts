@@ -10,9 +10,9 @@ if (fs.existsSync(".mnemonic")) {
   mnemonic = fs.readFileSync(".mnemonic").toString().trim();
 }
 
-//require('./tasks');
+require('./tasks');
 //require("@nomicfoundation/hardhat-toolbox");
-require('./tasks/fill_alpha2_data.ts');
+//require('./tasks/fill_alpha2_data.ts');
 
 
 const config: HardhatUserConfig = {
