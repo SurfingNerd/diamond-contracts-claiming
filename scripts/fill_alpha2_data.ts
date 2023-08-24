@@ -9,6 +9,8 @@ import "@nomiclabs/hardhat-ethers";
 import { ensure0x} from "../api/src/cryptoHelpers";
 import { CryptoJS } from "../api/src/cryptoJS";
 
+import { ClaimContract } from "../typechain-types/ClaimContract";
+
 // import { ethers } from "hardhat";
  //const { ethers } = require("hardhat");
 //require("@nomiclabs/hardhat-ethers");
@@ -43,8 +45,8 @@ async function main()  {
     const dillute2 = now + 6 * month * speedUpMultiplier;
     const dillute3 = now + 5 * 12 * month * speedUpMultiplier;
 
-    const contractFactory = await ethers.getContractFactory("ClaimContract");
-    const claimContract  = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, "0x", dillute1, dillute2, dillute3);
+    const contractFactory  = await ethers.getContractFactory("ClaimContract");
+    const claimContract : ClaimContract = (await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, "0x", dillute1, dillute2, dillute3)) as ClaimContract;
 
 
     let currentPot = 3768982;
@@ -95,9 +97,12 @@ async function main()  {
         console.log(`add ${name} :  ${result.hash}, block: ${result.blockNumber} nonce: ${result.nonce},  ` );
     };
 
-    logResult('add1:', await claimContract.addBalance(claim1AddressOldRipe, { value: ethers.utils.parseEther(claim1Value.toString()) }));
-    logResult('add2:', await claimContract.addBalance(claim2AddressOldRipe, { value: ethers.utils.parseEther(claim2Value.toString()) }));
-    logResult('add3:', await claimContract.addBalance(claim3AddressOldRipe, { value: ethers.utils.parseEther(claim3Value.toString()) }));
+    
+
+
+    logResult('add1:', await (await claimContract.addBalance(claim1AddressOldRipe, { value: ethers.utils.parseEther(claim1Value.toString()) })).wait(1));
+    logResult('add2:', await (await claimContract.addBalance(claim2AddressOldRipe, { value: ethers.utils.parseEther(claim2Value.toString()) })).wait(1));
+    logResult('add3:', await (await claimContract.addBalance(claim3AddressOldRipe, { value: ethers.utils.parseEther(claim3Value.toString()) })).wait(1));
 }
  
 // We recommend this pattern to be able to use async/await everywhere
