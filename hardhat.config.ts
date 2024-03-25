@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomiclabs/hardhat-ethers";
 import fs from "fs";
 
 
@@ -10,7 +11,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: "alpha2_local",
   networks: {
     hardhat: {
       accounts: {
@@ -21,6 +22,16 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       hardfork: "istanbul",
       minGasPrice: 0
+    },
+    alpha2: {
+      url: "http://127.0.0.1:8540",
+      accounts: {
+        count: 100,
+        mnemonic
+      },
+      allowUnlimitedContractSize: true,
+      hardfork: "istanbul",
+      minGasPrice: 1000000000
     },
   },
   solidity: {

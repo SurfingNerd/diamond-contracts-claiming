@@ -19,7 +19,6 @@ import { getTestBalances } from "./fixtures/balances";
 
 const ECPair = ECPairFactory(ecc);
 
-
 function getDilluteTimestamps() : {dillute1: number, dillute2: number, dillute3: number} {
     let now = Math.floor(Date.now() / 1000);
     let dillute1 = now + (86400 * 2 * 31) + 86400 * 30;
@@ -368,14 +367,17 @@ describe('ClaimContract', () => {
         describe("defined prefix", async function () {
             const claimToString = stringToUTF8Hex('claim to ');
 
-            async function deployWithPrefixFixture() {
-                const claimContract = await deployClaiming(
+            async function deployWithPrefixFixture() : Promise< { claimContract: ClaimContract }> {
+                const claimContractUntyped = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
                     claimToString
                 );
 
-                return { claimContract }
+                const claimContract = claimContractUntyped as ClaimContract;
+
+
+                return { claimContract };
             }
 
             it('should validate signature with defined prefix', async () => {
