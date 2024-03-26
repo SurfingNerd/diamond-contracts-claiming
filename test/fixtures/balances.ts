@@ -8,3 +8,9 @@ export function getTestBalances() {
         { dmdv3Address: 'dUuPsqEU5JqyKYSGRLhzQnYohiXDjMKEnQ', dmdv4Address: '0x03fC83270Ee8c65dAa39a87296Ec7685384F7Cb1', value: '400000', signature: 'H6+F5sUVxWbi329Eti/46/Z6CM1mH1tT0ptr4Hm5DVU6SfXyGejpwYJ1h4wQHtJDoj7UD3KeiJ+h9GyE/+lkepY=' },
     ];
 }
+
+export function getTestBalancesBitcoin() {
+    return [
+        { dmdv3Address: '1KDWsyQkApTHhznnxsJVoxERXUgZQFHEqf', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: '10000', signature: 'IP4FUJO/M+hCuZrc5WVy7CAahzNH5H4t5C0ZCt1Dm5tAi5yUjZNcD9e2T5K8So9Vf60CS76VvmN767FOtsRSl+E=' }
+    ];
+}
