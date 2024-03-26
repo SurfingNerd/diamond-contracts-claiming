@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 import fs from "fs";
 
 
@@ -56,6 +57,27 @@ const config: HardhatUserConfig = {
   typechain: {
     target: "ethers-v5",
   },
+  etherscan: {
+    apiKey: "123",
+    customChains: [
+        {
+            network: "local",
+            chainId: 777012,
+            urls: {
+                apiURL: "http://127.0.0.1:4000/api",
+                browserURL: "http://127.0.0.1:4000",
+            },
+        },
+        {
+            network: "alpha2",
+            chainId: 777012,
+            urls: {
+                apiURL: "https://explorer.uniq.diamonds/api",
+                browserURL: "http://explorer.uniq.diamonds",
+            },
+        },
+    ],
+},
 };
 
 export default config;
