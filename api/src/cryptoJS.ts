@@ -167,7 +167,12 @@ export class CryptoJS {
     var ec = new EC.ec('secp256k1');
 
     const key = ec.keyFromPublic(publicKey);
-    const y = key.getPublic().getY().toString('hex');
+    let yHex = key.getPublic().getY().toString('hex');
+    if (yHex.length < 64) {
+      yHex = '0' + yHex;
+    }
+
+    const y = '0x' + yHex;
 
     this.log("y: " + y);
 
@@ -187,8 +192,9 @@ export class CryptoJS {
     return { x, y };
   }
 
-  public bitcoinAddressEssentialToFullQualifiedAddress(essentialPart: string, addressPrefix = '00') {
+  public bitcoinAddressEssentialToFullQualifiedAddress(essentialPart: string, addressPrefix: string) {
 
+    console.log('bitcoinAddressEssentialToFullQualifiedAddress: ', addressPrefix);
     // this.log('PublicKeyToBitcoinAddress:', essentialPart);
     let result = hexToBuf(essentialPart);
     result = prefixBuf(result, addressPrefix);

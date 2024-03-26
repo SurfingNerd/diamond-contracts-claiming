@@ -135,9 +135,15 @@ export class CryptoSol {
     );
   }
 
-  async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
+  async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber) {
     const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
-    return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
+    return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, "00");
+  }
+
+  async publicKeyToDMDv3Address(x: BigNumber, y: BigNumber) {
+    const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
+
+    return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, "0d");
   }
 
   public async pubKeyToEthAddress(x: string, y: string) {
