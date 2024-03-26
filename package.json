@@ -19,20 +19,18 @@
   },
   "homepage": "https://github.com/DMDcoin/diamond-contracts-claiming#readme",
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@types/elliptic": "^6.4.18",
     "base58check": "^2.0.0",
     "bitcoinjs-lib": "^6.1.5",
     "bitcoinjs-message": "^2.2.0",
     "bs58check": "^3.0.1",
-    "chai": "^5.1.0",
+    "chai": "^4.2.0",
     "ecpair": "^2.1.0",
     "elliptic": "^6.5.5",
-    "hardhat": "^2.22.2",
     "js-sha256": "^0.11.0",
-    "tiny-secp256k1": "^2.2.3"
+    "tiny-secp256k1": "^2.2.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
   }
 }
