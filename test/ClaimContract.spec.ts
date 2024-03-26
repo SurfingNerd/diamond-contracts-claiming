@@ -15,16 +15,18 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { getTestBalances } from "./fixtures/balances";
+import { getTestBalances, getTestBalancesBitcoin } from "./fixtures/balances";
+import { CryptoSol } from "../api/src/cryptoSol";
+import { bitcoin } from "ecpair/src/networks";
 
 const ECPair = ECPairFactory(ecc);
 
-function getDilluteTimestamps() : {dillute1: number, dillute2: number, dillute3: number} {
+function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
     let dillute1 = now + (86400 * 2 * 31) + 86400 * 30;
     let dillute2 = now + (86400 * 3 * 31) + (86400 * 3 * 30);
     let dillute3 = now + (86400 * 4 * 365) + (86400 * 366);
-    return {dillute1, dillute2, dillute3};
+    return { dillute1, dillute2, dillute3 };
 
 }
 
@@ -48,9 +50,8 @@ describe('ClaimContract', () => {
         return claimContract;
     }
 
-    async function deployFixture() {
-        const claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
-
+    async function deployFixture() : Promise<{ claimContract: ClaimContract }> {
+        const claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x') as ClaimContract;
         return { claimContract }
     }
 
@@ -269,11 +270,11 @@ describe('ClaimContract', () => {
             const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
 
             expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-            expect(key.y).equal("99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
+            expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
-        it('should recover public ket from multiple signatures', async () => {
+        it('should recover public key from multiple signatures', async () => {
             // Same test as previous
             // But with multi signatures of the same key.
             // in order to cover different signatures variations,
@@ -292,7 +293,7 @@ describe('ClaimContract', () => {
                 const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
 
                 expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-                expect(key.y).equal("99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
+                expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
                 expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
             }
         });
@@ -367,7 +368,7 @@ describe('ClaimContract', () => {
         describe("defined prefix", async function () {
             const claimToString = stringToUTF8Hex('claim to ');
 
-            async function deployWithPrefixFixture() : Promise< { claimContract: ClaimContract }> {
+            async function deployWithPrefixFixture(): Promise<{ claimContract: ClaimContract }> {
                 const claimContractUntyped = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
@@ -414,14 +415,81 @@ describe('ClaimContract', () => {
                     await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
 
                     expectedTotalBalance = expectedTotalBalance.add(balance.value);
-
                     const currentBalance = await claimContract.balances(ripeAddress);
-
                     expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
                 }
 
                 const totalBalance = await ethers.provider.getBalance(claimContract.address);
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
+            });
+
+            // it('configured signatures match the addresses', async () => {
+            //     //get ethereum address from public key.
+
+            //     const { claimContract } = await helpers.loadFixture(deployFixture);
+
+            //     const balances = getTestBalances();
+            //     for (const balance of balances) { 
+
+            //     }
+            //     const ethAddress = await claimContract.publicKeyToEthereumAddress()
+                    
+            // });
+
+            it('claim should be work after balances where added', async () => {
+                const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
+
+                let cryptoSol : CryptoSol = new CryptoSol(claimContract);
+
+                const caller = signers[0];
+                const balances = getTestBalances();
+
+                let expectedTotalBalance = BigNumber.from('0');
+
+                for (const balance of balances) {
+                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));                    
+                    await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
+                    expectedTotalBalance = expectedTotalBalance.add(balance.value);
+                    const currentBalance = await claimContract.balances(ripeAddress);
+                    expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+                }
+
+                for (const balance of balances) {
+                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+
+                    //const checksum = await claimContract.calculateAddressString(balance.dmdv4Address, true);
+                    
+                    //deployWithPrefixFixture
+                    let postfix = "";
+
+                    console.log('checking:', balance.dmdv3Address);
+                    
+                    const publicKey = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address);
+                    //console.log('public key', publicKey);
+                    const rs = cryptoJS.signatureBase64ToRSV(balance.signature);  
+                    //console.log('rs', rs);
+                    // get bitcoin address from public key.
+                    const bitcoinAddress = await cryptoSol.publicKeyToDMDv3Address(BigNumber.from(publicKey.x), BigNumber.from(publicKey.y), "d");
+                    // let bitcoinAddress = await claimContract.publicKeyToBitcoinAddress(publicKey.x, publicKey.y, "1");
+                    console.log('dmd:', bitcoinAddress);
+                    
+                    //expect(bitcoinAddress).to.equal(balance.dmdv3Address, 'Bitcoin/DMD address matches expected address.');
+                    //const ethAddress = await claimContract.publicKeyToEthereumAddress(publicKey.x, publicKey.y);
+                    //expect(ethAddress).to.equal(balance.dmdv4Address , 'Ethereum address matches expected address.');
+                    
+                    
+                    //console.log('publicKey',  publicKey);
+                    //console.log('rs',  rs);
+
+                    //let v = 0x1b;
+                    //let v = 0x1c;
+                    //await claimContract.connect(caller).claim(balance.dmdv4Address, true, "0x", publicKey.x, publicKey.y, v, rs.r, rs.s);
+
+                    // expectedTotalBalance = expectedTotalBalance.add(balance.value);
+                    // const currentBalance = await claimContract.balances(ripeAddress);
+                    // expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+                }
+
             });
         });
     });
