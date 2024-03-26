@@ -20,10 +20,7 @@ export class CryptoSol {
 
   public static async fromContractAddress(contractAddress: string): Promise<CryptoSol> {
 
-
-    //const contract : any = new web3.eth.Contract(abi, contractAddress);
-
-    const contract = await ethers.getContractAt("ClaimContract", contractAddress);
+    const contract: any = await ethers.getContractAt("ClaimContract", contractAddress);
     return new CryptoSol(contract);
   }
 
@@ -156,7 +153,6 @@ export class CryptoSol {
   public async addBalance(dmdV3Address: string, value: string) {
 
     const signers = await ethers.getSigners();
-    //const accounts = await this.web3Instance.eth.getAccounts();
     const fromAccount = signers[0];
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
 
