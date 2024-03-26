@@ -11,7 +11,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "alpha2_local",
+  defaultNetwork: "alpha2",
   networks: {
     hardhat: {
       accounts: {
@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
       minGasPrice: 0
     },
     alpha2: {
-      url: "http://127.0.0.1:8540",
+      url: "https://rpc.uniq.diamonds",
       accounts: {
         count: 100,
         mnemonic
