@@ -1,13 +1,10 @@
-import { ethers } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+
+import * as he from "@nomicfoundation/hardhat-ethers";
 
 import { ClaimContract } from "../typechain-types/ClaimContract";
 
-const hre = require("hardhat");
 
 async function main() {
-
-
 
     let claimBeneficorAddress = "0x2000000000000000000000000000000000000001";
     let beneficorDAOAddress = "0xDA0da0da0Da0Da0Da0DA00DA0da0da0DA0DA0dA0";
@@ -23,7 +20,9 @@ async function main() {
     const prefix = "0x";
     
     const contractFactory = await ethers.getContractFactory("ClaimContract");
-    const claimContract: ClaimContract = (await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3)) as ClaimContract;
+    
+    const claimContractAny : any = (await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3)) as ClaimContract;
+    const claimContract = claimContractAny as ClaimContract;
 
     console.log('claim contract deployed to:', claimContract.address);
 
