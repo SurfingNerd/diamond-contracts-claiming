@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
-    "test": "npx hardhat test",
+    "test": "npx hardhat test --network hardhat",
     "test-deploy": "ts-node scripts/deploy-raw.ts"
   },
   "repository": {
@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/DMDcoin/diamond-contracts-claiming#readme",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/elliptic": "^6.4.18",
     "base58check": "^2.0.0",
     "bitcoinjs-lib": "^6.1.5",
@@ -30,6 +30,7 @@
     "ecpair": "^2.1.0",
     "elliptic": "^6.5.5",
     "js-sha256": "^0.11.0",
+    "secp256k1": "^5.0.0",
     "tiny-secp256k1": "^2.2.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
