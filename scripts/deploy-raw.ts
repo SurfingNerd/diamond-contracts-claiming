@@ -1,8 +1,5 @@
-
-import * as he from "@nomicfoundation/hardhat-ethers";
-
 import { ClaimContract } from "../typechain-types/ClaimContract";
-
+import { ethers } from "hardhat";
 
 async function main() {
 
@@ -19,31 +16,31 @@ async function main() {
 
     const prefix = "0x";
     
+    
     const contractFactory = await ethers.getContractFactory("ClaimContract");
     
-    const claimContractAny : any = (await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3)) as ClaimContract;
-    const claimContract = claimContractAny as ClaimContract;
-
-    console.log('claim contract deployed to:', claimContract.address);
-
-    console.log('claim contract deployed to:', claimContract.address);
+    const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3);
+    //const claimContract = claimContractAny as ClaimContract;
     
+    let claimContractAddress = await claimContract.getAddress();
+    console.log('claim contract deployed to:', claimContractAddress);
+
     console.log(`trying to verify.`);
     console.log(`npx command to verify localy:`); 
-    console.log(`npx hardhat verify --network alpha2 ${claimContract.address} ${claimBeneficorAddress} ${beneficorDAOAddress} ${prefix} ${dillute1} ${dillute2} ${dillute3}` );
+    console.log(`npx hardhat verify --network alpha2 ${claimContractAddress} ${claimBeneficorAddress} ${beneficorDAOAddress} ${prefix} ${dillute1} ${dillute2} ${dillute3}` );
 
 
-    await hre.run("verify:verify", {
-        address: claimContract.address,
-        constructorArguments: [
-            claimBeneficorAddress,
-            beneficorDAOAddress,
-            prefix,
-            dillute1,
-            dillute2,
-            dillute3,
-        ],
-      });
+    // await hre.run("verify:verify", {
+    //     address: claimContract.address,
+    //     constructorArguments: [
+    //         claimBeneficorAddress,
+    //         beneficorDAOAddress,
+    //         prefix,
+    //         dillute1,
+    //         dillute2,
+    //         dillute3,
+    //     ],
+    //   });
 }
 
 // We recommend this pattern to be able to use async/await everywhere
