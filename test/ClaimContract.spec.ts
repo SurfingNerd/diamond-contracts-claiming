@@ -257,7 +257,9 @@ describe('ClaimContract', () => {
             const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
 
-            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, []);
+            console.log('hash ', hash);
+
+            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, "0x");
 
             expect(hash).to.be.equal(hashFromSolidity);
         });
