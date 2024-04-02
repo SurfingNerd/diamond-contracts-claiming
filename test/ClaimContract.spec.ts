@@ -43,7 +43,7 @@ describe('ClaimContract', () => {
 
         const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
 
-        await claimContract.deployed();
+        await claimContract.waitForDeployment();
 
         return claimContract;
     }
@@ -138,7 +138,7 @@ describe('ClaimContract', () => {
             );
 
             
-            expect(await contract.deployed());
+            expect(await contract.waitForDeployment());
         });
     });
 
