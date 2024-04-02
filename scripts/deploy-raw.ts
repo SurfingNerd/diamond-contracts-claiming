@@ -1,5 +1,7 @@
 import { ClaimContract } from "../typechain-types/ClaimContract";
-import { ethers } from "hardhat";
+import hre from "hardhat";
+
+let ethers = hre.ethers;
 
 async function main() {
 
@@ -26,21 +28,21 @@ async function main() {
     console.log('claim contract deployed to:', claimContractAddress);
 
     console.log(`trying to verify.`);
-    console.log(`npx command to verify localy:`); 
+    console.log(`npx command to verify localy - if the automated command fails:`); 
     console.log(`npx hardhat verify --network alpha2 ${claimContractAddress} ${claimBeneficorAddress} ${beneficorDAOAddress} ${prefix} ${dillute1} ${dillute2} ${dillute3}` );
 
 
-    // await hre.run("verify:verify", {
-    //     address: claimContract.address,
-    //     constructorArguments: [
-    //         claimBeneficorAddress,
-    //         beneficorDAOAddress,
-    //         prefix,
-    //         dillute1,
-    //         dillute2,
-    //         dillute3,
-    //     ],
-    //   });
+    await hre.run("verify:verify", {
+        address: claimContractAddress,
+        constructorArguments: [
+            claimBeneficorAddress,
+            beneficorDAOAddress,
+            prefix,
+            dillute1,
+            dillute2,
+            dillute3,
+        ],
+      });
 }
 
 // We recommend this pattern to be able to use async/await everywhere
