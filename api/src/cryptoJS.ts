@@ -148,6 +148,7 @@ export class CryptoJS {
 
     const hash = bitcoinMessage.magicHash(messageContent);
 
+    
     const publicKey = secp256k1.ecdsaRecover(
       parsed.signature,
       parsed.recovery,
@@ -158,9 +159,9 @@ export class CryptoJS {
     //we now have the public key
     //public key is the X Value with a prefix.
     //it's 02 or 03 prefix, depending if y is ODD or not.
-    this.log("publicKey: ", ethers.utils.hexlify(publicKey));
+    this.log("publicKey: ", ethers.hexlify(publicKey));
 
-    const x = ethers.utils.hexlify(publicKey.slice(1));
+    const x = ethers.hexlify(publicKey.slice(1));
     this.log("x: " + x);
 
 
@@ -171,7 +172,7 @@ export class CryptoJS {
 
     this.log("y: " + y);
 
-    return { publicKey: ethers.utils.hexlify(publicKey), x, y };
+    return { publicKey: ethers.hexlify(publicKey), x, y };
   }
 
 
