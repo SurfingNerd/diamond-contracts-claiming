@@ -257,10 +257,7 @@ describe('ClaimContract', () => {
             const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
 
-            console.log('hash ', hash);
-
             const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, "0x");
-
             expect(hash).to.be.equal(hashFromSolidity);
         });
 
@@ -407,24 +404,25 @@ describe('ClaimContract', () => {
             it('should correctly add balances', async () => {
                 const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
 
+                const claimContractAddress = await claimContract.getAddress();
                 const caller = signers[0];
                 const balances = getTestBalances();
 
-                let expectedTotalBalance = BigNumber.from('0');
-
+                let expectedTotalBalance = ethers.toBigInt('0');
+                
                 for (const balance of balances) {
                     const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
 
                     await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
 
-                    expectedTotalBalance = expectedTotalBalance.add(balance.value);
+                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
 
                     const currentBalance = await claimContract.balances(ripeAddress);
 
                     expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
                 }
 
-                const totalBalance = await ethers.provider.getBalance(claimContract.address);
+                const totalBalance = await ethers.provider.getBalance(claimContractAddress);
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
             });
         });

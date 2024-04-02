@@ -10,9 +10,6 @@ import ECPairFactory from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { ClaimContract } from '../typechain-types';
 
-import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
-
 const ECPair = ECPairFactory(ecc);
 
 const bitcoinMessage = require('bitcoinjs-message');
@@ -206,38 +203,7 @@ export class TestFunctions {
     const rHex = '0x' + sig.r.toString('hex');
     const sHex = '0x' + sig.s.toString('hex');
 
-    //this.web3Instance.eth.ercRe
-    //const ercRecoverResult27 = ecrecover(hash, 27, sig.r, sig.s);
-    //this.log('js ercRecoverResult27: (public key) ' + ercRecoverResult27.toString('hex'));
-
-    //const ercRecoverResult28 = ecrecover(hash, 28, sig.r, sig.s);
-    //this.log('js ercRecoverResult28: (public key) ' + ercRecoverResult28.toString('hex'));
-
-    // const checkSignatureResult27 = await this.instance.methods.checkSignature(
-    //   hashHex,
-    //   rHex,
-    //   sHex,
-    //   27)
-    // .call();
-
-    // const checkSignatureResult28 = await this.instance.methods.checkSignature(
-    //   hashHex,
-    //   rHex,
-    //   sHex,
-    //   28)
-    // .call();
-
-
-    // this.log('Recovered Address from solidity:');
-    // this.log('27: ' + checkSignatureResult27);
-    // this.log('28: ' + checkSignatureResult28);
-
-
     var ec = new EC.ec('secp256k1');
-
-    //const sig27 = new EC.ec.Signature({ r: rHex, s: sHex, recoveryParam: 27});
-    //const sig28 = new EC.ec.Signature({ r: rHex, s: sHex, recoveryParam: 28});
-
 
     const sig27 = { r: sig.r.toString('hex'), s: sig.s.toString('hex'), recoveryParam: 0 };
     const sig28 = { r: sig.r.toString('hex'), s: sig.s.toString('hex'), recoveryParam: 1 };
