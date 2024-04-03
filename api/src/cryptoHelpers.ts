@@ -18,6 +18,9 @@ export function ensure0x(input: string | Buffer) {
 
 }
 
+export function toHexString(input: bigint) {
+  return '0x' + input.toString(16);
+}
 
 export function hexToBuf(input: string): Buffer {
   if (input == null) {
