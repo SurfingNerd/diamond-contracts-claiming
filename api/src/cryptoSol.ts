@@ -1,9 +1,6 @@
 import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
-
 import { ClaimContract } from '../../typechain-types/index';
-
-import { ensure0x, stringToUTF8Hex } from './cryptoHelpers';
+import { ensure0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 
@@ -40,11 +37,6 @@ export class CryptoSol {
     if (this.logDebug) {
       console.log(message, ...params);
     }
-  }
-
-
-  public addressToHashToSign(address: string) {
-
   }
 
   /**
@@ -122,17 +114,17 @@ export class CryptoSol {
    * @param y Y coordinate of the ECDSA public key
    * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
    */
-  async publicKeyToBitcoinAddressEssential(x: BigNumber, y: BigNumber): Promise<string> {
+  async publicKeyToBitcoinAddressEssential(x: bigint, y: bigint): Promise<string> {
     const legacyCompressedEnumValue = 1;
 
     return this.instance.publicKeyToBitcoinAddress(
-      x.toHexString(),
-      y.toHexString(),
+      toHexString(x),
+      toHexString(y),
       legacyCompressedEnumValue
     );
   }
 
-  async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
+  async publicKeyToBitcoinAddress(x: bigint, y: bigint, addressPrefix: string) {
     const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
     return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
   }
@@ -166,7 +158,7 @@ export class CryptoSol {
   }
 
   public async getContractBalance() {
-    const address = this.instance.address;
+    const address = await this.instance.getAddress();
     // get the balance of ths address.
 
     return await ethers.provider.getBalance(address);
