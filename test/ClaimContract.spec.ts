@@ -1,7 +1,6 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 
 import EC from "elliptic";
@@ -16,6 +15,7 @@ import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
 import { getTestBalances } from "./fixtures/balances";
+
 
 const ECPair = ECPairFactory(ecc);
 
@@ -48,9 +48,9 @@ describe('ClaimContract', () => {
         return claimContract;
     }
 
-    async function deployFixture() {
-        const claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
-
+    async function deployFixture(): Promise<{ claimContract: ClaimContract }>{
+        const claimContractAny : any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
+        const claimContract = claimContractAny as ClaimContract;
         return { claimContract }
     }
 
@@ -369,7 +369,7 @@ describe('ClaimContract', () => {
             const claimToString = stringToUTF8Hex('claim to ');
 
             async function deployWithPrefixFixture() : Promise< { claimContract: ClaimContract }> {
-                const claimContractUntyped = await deployClaiming(
+                const claimContractUntyped: any = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
                     claimToString
@@ -411,14 +411,11 @@ describe('ClaimContract', () => {
                 let expectedTotalBalance = ethers.toBigInt('0');
                 
                 for (const balance of balances) {
+
                     const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-
                     await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-
                     expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-
                     const currentBalance = await claimContract.balances(ripeAddress);
-
                     expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
                 }
 
@@ -427,4 +424,45 @@ describe('ClaimContract', () => {
             });
         });
     });
+
+    // describe("claiming", async () => {
+
+    //     const { claimContract } = await helpers.loadFixture(deployFixture);
+
+    //     const claimContractAddress = await claimContract.getAddress();
+    //     const caller = signers[0];
+    //     const balances = getTestBalances();
+
+    //     let expectedTotalBalance = ethers.toBigInt('0');
+        
+    //     for (const balance of balances) {
+    //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+    //         await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
+    //         expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+    //         const currentBalance = await claimContract.balances(ripeAddress);
+    //         expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+    //     }
+
+    //     for (const balance of balances) {
+
+    //         //const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
+
+    //         // claimContract.claim(balance.dmdv4Address)
+    //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+
+    //         CryptoJS
+
+    //         // await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
+    //         // expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+    //         // const currentBalance = await claimContract.balances(ripeAddress);
+    //         // expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+
+
+    //     }
+
+
+        
+    //     //const totalBalance = await ethers.provider.getBalance(claimContractAddress);
+    //     //expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
+    // });
 });
