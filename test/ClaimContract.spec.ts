@@ -54,7 +54,7 @@ describe('ClaimContract', () => {
         return { claimContract }
     }
 
-    async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
+    async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, dmdSignature: boolean, postfix: string = '') {
         const prefixBytes = await claimContract.prefixStr();
         const prefixBuffer = hexToBuf(prefixBytes);
 
@@ -72,7 +72,8 @@ describe('ClaimContract', () => {
                 ensure0x(key.y),
                 ensure0x('0x1b'),
                 ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex'))
+                ensure0x(rs.s.toString('hex')),
+                dmdSignature
             );
 
         const txResult2 =
@@ -84,7 +85,8 @@ describe('ClaimContract', () => {
                 ensure0x(key.y),
                 ensure0x('0x1c'),
                 ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex'))
+                ensure0x(rs.s.toString('hex')),
+                dmdSignature
             );
 
         expect(txResult1 || txResult2).to.be.equal(true, "Claim message did not match the signature");
@@ -171,7 +173,7 @@ describe('ClaimContract', () => {
             const resultJS = ensure0x(cryptoJS.getBitcoinSignedMessageMagic(address).toString('hex'));
 
             const postfixHex = stringToUTF8Hex('');
-            const result = await claimContract.createClaimMessage(address, true, postfixHex);
+            const result = await claimContract.createClaimMessage(address, true, postfixHex, false);
 
             expect(result).to.be.equal(resultJS);
         });
@@ -257,7 +259,7 @@ describe('ClaimContract', () => {
             const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
 
-            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, "0x");
+            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, "0x", false);
             expect(hash).to.be.equal(hashFromSolidity);
         });
 
@@ -336,7 +338,8 @@ describe('ClaimContract', () => {
                     stringToUTF8Hex(''),
                     '0x1b',
                     ensure0x(rs.r),
-                    ensure0x(rs.s)
+                    ensure0x(rs.s),
+                    false
                 );
                 const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
                     message,
@@ -344,7 +347,8 @@ describe('ClaimContract', () => {
                     stringToUTF8Hex(''),
                     '0x1c',
                     ensure0x(rs.r),
-                    ensure0x(rs.s)
+                    ensure0x(rs.s),
+                    false
                 );
 
                 expect(expectedEthAddress).to.be.oneOf([recoveredETHAddress, recoveredETHAddress2]);
@@ -362,7 +366,7 @@ describe('ClaimContract', () => {
             const claimToAddress = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
             const signatureBase64 = getTestSignatures()[0];
 
-            await verifySignature(claimContract, claimToAddress, signatureBase64);
+            await verifySignature(claimContract, claimToAddress, signatureBase64, false);
         });
 
         describe("defined prefix", async function () {
@@ -387,7 +391,7 @@ describe('ClaimContract', () => {
                 const claimToAddress = "0x9edD67cCFd52211d769A7A09b989d148749B1d10";
                 const signatureBase64 = "IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=";
 
-                await verifySignature(claimContract, claimToAddress, signatureBase64);
+                await verifySignature(claimContract, claimToAddress, signatureBase64, false);
             });
 
             it('should validate signature defined prefix and postfix', async () => {
@@ -398,7 +402,7 @@ describe('ClaimContract', () => {
 
                 const suffixString = ' test suffix 123';
 
-                await verifySignature(claimContract, claimToAddress, signatureBase64, suffixString);
+                await verifySignature(claimContract, claimToAddress, signatureBase64, false, suffixString);
             });
 
             it('should correctly add balances', async () => {
@@ -426,15 +430,11 @@ describe('ClaimContract', () => {
     });
 
     // describe("claiming", async () => {
-
     //     const { claimContract } = await helpers.loadFixture(deployFixture);
-
     //     const claimContractAddress = await claimContract.getAddress();
     //     const caller = signers[0];
     //     const balances = getTestBalances();
-
     //     let expectedTotalBalance = ethers.toBigInt('0');
-        
     //     for (const balance of balances) {
     //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
     //         await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
@@ -442,26 +442,16 @@ describe('ClaimContract', () => {
     //         const currentBalance = await claimContract.balances(ripeAddress);
     //         expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
     //     }
-
     //     for (const balance of balances) {
-
     //         //const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
-
     //         // claimContract.claim(balance.dmdv4Address)
     //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-
     //         CryptoJS
-
     //         // await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
     //         // expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
     //         // const currentBalance = await claimContract.balances(ripeAddress);
     //         // expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-
-
     //     }
-
-
-        
     //     //const totalBalance = await ethers.provider.getBalance(claimContractAddress);
     //     //expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
     // });
