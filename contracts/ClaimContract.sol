@@ -136,9 +136,10 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) external {
-        //retrieve the oldAddress out of public and private key.
+        //retrieve the oldAddress out of public key.
         bytes20 oldAddress = publicKeyToBitcoinAddress(
             _pubKeyX,
             _pubKeyY,
@@ -159,7 +160,8 @@ contract ClaimContract {
                 _pubKeyY,
                 _v,
                 _r,
-                _s
+                _s,
+                _dmdSignature
             ),
             "Signature does not match for this claiming procedure."
         );
@@ -280,13 +282,25 @@ contract ClaimContract {
     function createClaimMessage(
         address _claimToAddr,
         bool _claimAddrChecksum,
-        bytes memory _postfix
+        bytes memory _postfix,
+        bool _dmdSignature
     ) public view returns (bytes memory) {
         //TODO: pass this as an argument. evaluate in JS before includeAddrChecksum is used or not.
         //now for testing, we assume Yes.
 
         bytes memory addrStr = calculateAddressString(_claimToAddr, _claimAddrChecksum);
 
+        if (_dmdSignature) {
+            return
+                abi.encodePacked(
+                    DIAMOND_SIG_PREFIX_LEN,
+                    DIAMOND_SIG_PREFIX_STR,
+                    uint8(prefixStr.length) + ETH_ADDRESS_HEX_LEN + 2 + uint8(_postfix.length),
+                    prefixStr,
+                    addrStr,
+                    _postfix
+                );
+        }
         return
             abi.encodePacked(
                 BITCOIN_SIG_PREFIX_LEN,
@@ -307,9 +321,10 @@ contract ClaimContract {
     function getHashForClaimMessage(
         address _claimToAddr,
         bool _claimAddrChecksum,
-        bytes memory _postfix
+        bytes memory _postfix,
+        bool _dmdSignature
     ) public view returns (bytes32) {
-        return calcHash256(createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix));
+        return calcHash256(createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature));
     }
 
     /**
@@ -328,13 +343,14 @@ contract ClaimContract {
         bytes memory _postfix,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) public view returns (address) {
         //require(_v >= 27 && _v <= 30, "v invalid");
 
         /* Create and hash the claim message text */
         bytes32 messageHash = calcHash256(
-            createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix)
+            createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature)
         );
 
         return ecrecover(messageHash, _v, _r, _s);
@@ -348,7 +364,8 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) public view returns (bool) {
         require(_v >= 27 && _v <= 30, "v invalid");
 
@@ -361,7 +378,7 @@ contract ClaimContract {
         //we need to check if X and Y corresponds to R and S.
 
         /* Create and hash the claim message text */
-        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _claimAddrChecksum, _postFix);
+        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _claimAddrChecksum, _postFix, _dmdSignature);
 
         /* Verify the public key */
         return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
