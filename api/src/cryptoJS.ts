@@ -1,13 +1,13 @@
 import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
-import { hexToBuf, prefixBuf } from './cryptoHelpers'
+import { hexToBuf, prefixBuf } from './cryptoHelpers';
 import varuint from 'varuint-bitcoin';
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
 //var bs58check = require('bs58check');
 
-const bitcoinMessage = require('bitcoinjs-message');
+import bitcoinMessage from 'bitcoinjs-message';
 // const secp256k1 = require('secp256k1')
 
 import * as secp256k1 from "secp256k1";
@@ -206,7 +206,7 @@ export class CryptoJS {
     const messageBuffer = Buffer.from(message, 'utf8');
     const messageVISize = varuint.encodingLength(message.length);
 
-    const buffer = Buffer.allocUnsafe(
+    const buffer = Buffer.alloc(
       messagePrefix.length + messageVISize + message.length
     );
 
