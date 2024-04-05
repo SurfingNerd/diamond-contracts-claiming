@@ -1,4 +1,3 @@
-import { ClaimContract } from "../typechain-types/ClaimContract";
 import hre from "hardhat";
 
 let ethers = hre.ethers;
@@ -17,8 +16,6 @@ async function main() {
     const dillute3 = now + 5 * 12 * month;
 
     const prefix = "0x";
-    
-    
     const contractFactory = await ethers.getContractFactory("ClaimContract");
     
     const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3);
@@ -26,11 +23,9 @@ async function main() {
     
     let claimContractAddress = await claimContract.getAddress();
     console.log('claim contract deployed to:', claimContractAddress);
-
     console.log(`trying to verify.`);
     console.log(`npx command to verify localy - if the automated command fails:`); 
     console.log(`npx hardhat verify --network alpha2 ${claimContractAddress} ${claimBeneficorAddress} ${beneficorDAOAddress} ${prefix} ${dillute1} ${dillute2} ${dillute3}` );
-
 
     await hre.run("verify:verify", {
         address: claimContractAddress,
