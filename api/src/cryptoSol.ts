@@ -10,10 +10,11 @@ import { hexToBuf } from './cryptoHelpers';
  */
 export class CryptoSol {
 
+
+
   public cryptoJS = new CryptoJS();
 
   private logDebug: boolean = false;
-
 
   public static async fromContractAddress(contractAddress: string): Promise<CryptoSol> {
 
@@ -26,12 +27,46 @@ export class CryptoSol {
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
     }
+
+    
+  }
+
+
+  public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
+    
+    let postfixHex = stringToUTF8Hex(postfix);
+
+    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
+    this.log('Claim Message: ' , claimMessage);
+
+    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature, claimMessage);
+
+    const rs = this.cryptoJS.signatureBase64ToRSV(signature);
+
+    let pubKeyX = ensure0x(pubkey.x);
+    let pubKeyY = ensure0x(pubkey.y);
+    
+
+    let dmdV3AddressFromSignatures = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
+    
+
+    this.log('dmdV3AddressFromSignatures:', dmdV3AddressFromSignatures);
+    let v = ethers.toBeHex(rs.v);
+
+    // this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig);
   }
 
   public setLogDebug(value: boolean) {
     this.logDebug = value;
     this.cryptoJS.setLogDebug(value);
   }
+
+  // private async ensurePrefixCache() {
+
+  //   if (this.prefixCache === '') {
+  //     this.prefixCache = await this.prefixString();
+  //   }
+  // }
 
   private log(message: string, ...params: any[]) {
     if (this.logDebug) {
@@ -44,11 +79,11 @@ export class CryptoSol {
    * see also: https://bitcoin.stackexchange.com/questions/77324/how-are-bitcoin-signed-messages-generated
    * @param address Ethereum style address, include checksum information.
    */
-  public async addressToClaimMessage(address: string, postfix: string = ''): Promise<string> {
+  public async addressToClaimMessage(address: string, postfix: string = '', dmdSig: boolean = false): Promise<string> {
 
     const postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex);
+    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex, dmdSig);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
@@ -73,7 +108,8 @@ export class CryptoSol {
     pubkeyY: string,
     sigV: string,
     sigR: string,
-    sigS: string):
+    sigS: string,
+    dmd: boolean):
     Promise<boolean> {
     const result =
       await this.instance.claimMessageMatchesSignature(
@@ -84,7 +120,8 @@ export class CryptoSol {
         ensure0x(pubkeyY),
         ensure0x(sigV),
         ensure0x(sigR),
-        ensure0x(sigS));
+        ensure0x(sigS), 
+        dmd);
     this.log('Claim Result: ', result);
     return result;
   }
@@ -95,7 +132,8 @@ export class CryptoSol {
     postfix: string,
     sigV: string,
     sigR: string | Buffer,
-    sigS: string | Buffer)
+    sigS: string | Buffer,
+    dmd: boolean)
     : Promise<string> {
 
     return this.instance.getEthAddressFromSignature(
@@ -104,7 +142,8 @@ export class CryptoSol {
       stringToUTF8Hex(postfix),
       ensure0x(sigV),
       ensure0x(sigR),
-      ensure0x(sigS)
+      ensure0x(sigS),
+      dmd
     );
   }
 
@@ -150,6 +189,10 @@ export class CryptoSol {
 
     await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value });
   }
+
+  // public async claim(dmdv3Address: string, payoutAddress: string, signature: string ) {
+  //   ensurePrefixCache()
+  // }
 
   public async getBalance(dmdV3Address: string) {
 
