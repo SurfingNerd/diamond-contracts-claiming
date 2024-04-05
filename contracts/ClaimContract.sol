@@ -52,8 +52,8 @@ contract ClaimContract {
 
     /// @dev the prefix for the signing message.
     /// A Prefix for the signing message can be used to separate different message between different contracts/networks
-    /// e.g.: "claim to testnet" for indicating that this is only a testnet message.
-    /// using another prefix makes old signatures invalid.
+    /// e.g.: "claim to testnet" for indicating that this is only a testnet claim.
+    /// the prefix is part of the signed message .
     bytes public prefixStr;
 
     event Claim(
