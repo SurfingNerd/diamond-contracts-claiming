@@ -15,16 +15,17 @@ import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
 import { getTestBalances } from "./fixtures/balances";
+import { CryptoSol } from "../api/src/cryptoSol";
 
 
 const ECPair = ECPairFactory(ecc);
 
-function getDilluteTimestamps() : {dillute1: number, dillute2: number, dillute3: number} {
+function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
     let dillute1 = now + (86400 * 2 * 31) + 86400 * 30;
     let dillute2 = now + (86400 * 3 * 31) + (86400 * 3 * 30);
     let dillute3 = now + (86400 * 4 * 365) + (86400 * 366);
-    return {dillute1, dillute2, dillute3};
+    return { dillute1, dillute2, dillute3 };
 
 }
 
@@ -48,8 +49,8 @@ describe('ClaimContract', () => {
         return claimContract;
     }
 
-    async function deployFixture(): Promise<{ claimContract: ClaimContract }>{
-        const claimContractAny : any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
+    async function deployFixture(): Promise<{ claimContract: ClaimContract }> {
+        const claimContractAny: any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
         const claimContract = claimContractAny as ClaimContract;
         return { claimContract }
     }
@@ -105,7 +106,7 @@ describe('ClaimContract', () => {
         it('should revert deploy with beneficor address = 0x0', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
-            
+
             let dilluteTimestamps = getDilluteTimestamps();
             await expect(
                 contractFactory.deploy(ethers.ZeroAddress, lateClaimBeneficorDAO, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
@@ -139,7 +140,7 @@ describe('ClaimContract', () => {
                 dilluteTimestamps.dillute3
             );
 
-            
+
             expect(await contract.waitForDeployment());
         });
     });
@@ -263,7 +264,7 @@ describe('ClaimContract', () => {
             expect(hash).to.be.equal(hashFromSolidity);
         });
 
-        it('should recover public key from signature', async () => {
+        it('should recover public key from signature single', async () => {
             //https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
             //passphrase: bit.diamonds
 
@@ -276,7 +277,7 @@ describe('ClaimContract', () => {
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
-        it('should recover public ket from multiple signatures', async () => {
+        it('should recover public key from signatures, all test signatures', async () => {
             // Same test as previous
             // But with multi signatures of the same key.
             // in order to cover different signatures variations,
@@ -372,7 +373,7 @@ describe('ClaimContract', () => {
         describe("defined prefix", async function () {
             const claimToString = stringToUTF8Hex('claim to ');
 
-            async function deployWithPrefixFixture() : Promise< { claimContract: ClaimContract }> {
+            async function deployWithPrefixFixture(): Promise<{ claimContract: ClaimContract }> {
                 const claimContractUntyped: any = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
@@ -413,7 +414,7 @@ describe('ClaimContract', () => {
                 const balances = getTestBalances();
 
                 let expectedTotalBalance = ethers.toBigInt('0');
-                
+
                 for (const balance of balances) {
 
                     const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
@@ -427,32 +428,30 @@ describe('ClaimContract', () => {
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
             });
         });
+
+        describe("dmdv3 claiming", async function () {
+
+            it("claiming", async () => {
+                const { claimContract } = await helpers.loadFixture(deployFixture);
+                const caller = signers[0];
+                const balances = getTestBalances();
+                let expectedTotalBalance = ethers.toBigInt('0');
+                for (const balance of balances) {
+                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+                    await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
+                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+                    const currentBalance = await claimContract.balances(ripeAddress);
+                    expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+                }
+
+                let cryptoSol = new CryptoSol(claimContract);
+                cryptoSol.setLogDebug(true);
+
+                for (const balance of balances) {
+                    await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", true);
+                }
+            });
+        });
     });
 
-    // describe("claiming", async () => {
-    //     const { claimContract } = await helpers.loadFixture(deployFixture);
-    //     const claimContractAddress = await claimContract.getAddress();
-    //     const caller = signers[0];
-    //     const balances = getTestBalances();
-    //     let expectedTotalBalance = ethers.toBigInt('0');
-    //     for (const balance of balances) {
-    //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-    //         await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-    //         expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-    //         const currentBalance = await claimContract.balances(ripeAddress);
-    //         expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-    //     }
-    //     for (const balance of balances) {
-    //         //const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
-    //         // claimContract.claim(balance.dmdv4Address)
-    //         const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-    //         CryptoJS
-    //         // await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-    //         // expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-    //         // const currentBalance = await claimContract.balances(ripeAddress);
-    //         // expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-    //     }
-    //     //const totalBalance = await ethers.provider.getBalance(claimContractAddress);
-    //     //expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-    // });
 });
