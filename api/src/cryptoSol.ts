@@ -5,12 +5,12 @@ import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 
 
+let base58check = require('base58check'); 
+
 /**
  * Crypto functions used in this project implemented in Soldity.
  */
 export class CryptoSol {
-
-
 
   public cryptoJS = new CryptoJS();
 
@@ -51,6 +51,20 @@ export class CryptoSol {
     
 
     this.log('dmdV3AddressFromSignatures:', dmdV3AddressFromSignatures);
+
+    let dmdAddressFromPublicKey = await this.instance.publicKeyToBitcoinAddress(
+      pubKeyX,
+      pubKeyY,
+      1
+    );
+
+    //  base58
+    let dmdAddress = base58check.encode(dmdAddressFromPublicKey);
+
+    this.log('dmdAddress:', dmdAddress);
+
+    //this.publicKeyToBitcoinAddressEssential()
+    ///this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
     let v = ethers.toBeHex(rs.v);
 
     // this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig);
