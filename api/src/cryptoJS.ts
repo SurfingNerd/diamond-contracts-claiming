@@ -144,7 +144,7 @@ export class CryptoJS {
     const signature = Buffer.from(signatureBase64, 'base64');
 
     const parsed = this.decodeSignature(signature);
-    this.log('parsed Signature:', parsed);
+    //this.log('parsed Signature:', parsed);
 
     const hash = bitcoinMessage.magicHash(messageContent);
 
