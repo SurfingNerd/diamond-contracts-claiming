@@ -11,6 +11,8 @@ export function getTestBalances() {
 
 
 export function getTestBalances_claim_testnet() {
+    // balances for const prefix = "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ";
+
     return [
         { dmdv3Address: 'dceCTudsSHMmWMswUNezkYVhTSskG7rnYh', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: '10000', signature: 'IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=' },
     ];
