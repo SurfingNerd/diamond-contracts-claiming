@@ -200,8 +200,7 @@ export class CryptoJS {
     return bs58Result;
   }
 
-  public getBitcoinSignedMessageMagic(message: string) {
-    const messagePrefix = '\u0018Bitcoin Signed Message:\n';
+  public getSignedMessageMagic(messagePrefix: string, message: string) {
     const messagePrefixBuffer = Buffer.from(messagePrefix, 'utf8');;
     const messageBuffer = Buffer.from(message, 'utf8');
     const messageVISize = varuint.encodingLength(message.length);
@@ -215,4 +214,16 @@ export class CryptoJS {
     messageBuffer.copy(buffer, messagePrefix.length + messageVISize);
     return buffer;
   }
+  
+  public getDMDSignedMessageMagic(message: string) {
+    const messagePrefix = '\u0018Diamond Signed Message:\n';
+    return this.getSignedMessageMagic(messagePrefix, message);
+  }
+
+
+  public getBitcoinSignedMessageMagic(message: string) {
+    const messagePrefix = '\u0018Bitcoin Signed Message:\n';
+    return this.getSignedMessageMagic(messagePrefix, message);
+  }
+
 }
