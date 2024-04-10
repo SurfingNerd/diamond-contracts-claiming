@@ -14,7 +14,7 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { getTestBalances } from "./fixtures/balances";
+import { getTestBalances, getTestBalances_claim_testnet } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -163,13 +163,6 @@ describe('ClaimContract', () => {
         it('should create correct claim message', async () => {
             const { claimContract } = await helpers.loadFixture(deployFixture);
 
-            // const address = '0xb56c4974EB4CFC2B339B441a4Ae854FeBE2B6504';
-            // //todo: define the real expected result to make sure that this works.
-            // const expectedResult = '0x18426974636f696e205369676e6564204d6573736167653a0a28307862353663343937344542344346433242333339423434316134416538353446654245324236353034'
-            // const result = await cryptoSol.addressToClaimMessage(address);
-            // assert.equal(result, expectedResult);
-            // //console.log('claim Message: ', result);
-
             const address = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const resultJS = ensure0x(cryptoJS.getBitcoinSignedMessageMagic(address).toString('hex'));
 
@@ -178,6 +171,28 @@ describe('ClaimContract', () => {
 
             expect(result).to.be.equal(resultJS);
         });
+
+
+        it('should create correct claim message dmd with prefix', async () => {
+            //const { claimContract } = await helpers.loadFixture(deployFixture);
+
+            // const address = '0xb56c4974EB4CFC2B339B441a4Ae854FeBE2B6504';
+            // //todo: define the real expected result to make sure that this works.
+            // const expectedResult = '0x18426974636f696e205369676e6564204d6573736167653a0a28307862353663343937344542344346433242333339423434316134416538353446654245324236353034'
+            // const result = await cryptoSol.addressToClaimMessage(address);
+            // assert.equal(result, expectedResult);
+            // //console.log('claim Message: ', result);
+
+            // const prefix = '';
+            // const address = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
+            // const resultJS = ensure0x(cryptoJS.getDMDSignedMessageMagic(prefix + address).toString('hex'));
+
+            // const postfixHex = stringToUTF8Hex('');
+            // const result = await claimContract.createClaimMessage(address, true, postfixHex, false);
+
+            // expect(result).to.be.equal(resultJS);
+        });
+
 
         it('should convert pub key to eth address', async () => {
             const { claimContract } = await helpers.loadFixture(deployFixture);
@@ -434,7 +449,7 @@ describe('ClaimContract', () => {
             it("claiming", async () => {
                 const { claimContract } = await helpers.loadFixture(deployFixture);
                 const caller = signers[0];
-                const balances = getTestBalances();
+                const balances = getTestBalances_claim_testnet();
                 let expectedTotalBalance = ethers.toBigInt('0');
                 for (const balance of balances) {
                     const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
