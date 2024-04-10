@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { ClaimContract } from '../../typechain-types/index';
-import { ensure0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
+import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 
@@ -34,6 +34,7 @@ export class CryptoSol {
 
   public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
     
+    console.log('claiming DMDv3Address: ', dmdV3Address);
     let postfixHex = stringToUTF8Hex(postfix);
 
     const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
@@ -52,14 +53,8 @@ export class CryptoSol {
 
     this.log('dmdV3AddressFromSignatures:', dmdV3AddressFromSignatures);
 
-    let dmdAddressFromPublicKey = await this.instance.publicKeyToBitcoinAddress(
-      pubKeyX,
-      pubKeyY,
-      1
-    );
-
     //  base58
-    let dmdAddress = base58check.encode(dmdAddressFromPublicKey);
+    let dmdAddress = base58check.encode(remove0x(dmdV3AddressFromSignatures));
 
     this.log('dmdAddress:', dmdAddress);
 
