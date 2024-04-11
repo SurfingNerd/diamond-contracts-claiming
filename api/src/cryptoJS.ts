@@ -195,9 +195,8 @@ export class CryptoJS {
     result = prefixBuf(result, addressPrefix);
     //this.log('with prefix: ' + result.toString('hex'));
 
-    const bs58Result = bs58check.encode(result);
+    return bs58check.encode(result);
 
-    return bs58Result;
   }
 
   public getSignedMessage(messagePrefix: string, message: string): Buffer {
