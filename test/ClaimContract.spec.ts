@@ -12,9 +12,9 @@ import * as ecc from 'tiny-secp256k1';
 
 import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
-import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
+import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { getTestBalances, getTestBalances_BTC, getTestBalances_claim_testnet } from "./fixtures/balances";
+import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_claim_testnet } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -30,6 +30,8 @@ function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3:
 }
 
 
+
+
 describe('ClaimContract', () => {
     let signers: SignerWithAddress[];
 
@@ -42,15 +44,21 @@ describe('ClaimContract', () => {
         const contractFactory = await ethers.getContractFactory("ClaimContract");
         let dilluteTimestamps = getDilluteTimestamps();
 
-        const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
+        let prefixHex = stringToUTF8Hex(prefix);
+
+        const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefixHex, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
 
         await claimContract.waitForDeployment();
 
         return claimContract;
     }
 
-    async function deployFixture(): Promise<{ claimContract: ClaimContract }> {
-        const claimContractAny: any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, '0x');
+    async function deployFixtureWithNoPrefix(): Promise<{ claimContract: ClaimContract }> {
+        return deployFixture('');
+    }
+
+    async function deployFixture(prefixHex: string): Promise<{ claimContract: ClaimContract }> {
+        const claimContractAny: any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
         const claimContract = claimContractAny as ClaimContract;
         return { claimContract }
     }
@@ -147,7 +155,7 @@ describe('ClaimContract', () => {
 
     describe("contract functions", () => {
         it('should correctly calculate address checksum', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             const address = '0xfec7b00dc0192319dda0c777a9f04e47dc49bd18';
             const addressWithChecksum = '0xfEc7B00DC0192319DdA0c777A9F04E47Dc49bD18';
@@ -161,7 +169,7 @@ describe('ClaimContract', () => {
         });
 
         it('should create correct claim message', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             const address = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const resultJS = ensure0x(cryptoJS.getBitcoinSignedMessage(address).toString('hex'));
@@ -195,7 +203,7 @@ describe('ClaimContract', () => {
 
 
         it('should convert pub key to eth address', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             // BIP39 Mnemonic: hello slim hope
             // address 0: 0x7af37454aCaB6dB76c11bd33C94ED7C0b7A60B2a
@@ -231,7 +239,7 @@ describe('ClaimContract', () => {
         });
 
         it('should convert public key to to DMDAddress', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
             // passphrase: bit.diamonds
@@ -270,7 +278,7 @@ describe('ClaimContract', () => {
         });
 
         it('should get hash for claim message', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
@@ -317,7 +325,7 @@ describe('ClaimContract', () => {
         });
 
         it('should match recovered address with expected Etherem/Bitcoin pseudo address', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             // same test as previous
             // But with multi signatures of the same key.
@@ -373,7 +381,7 @@ describe('ClaimContract', () => {
 
 
         it('should correctly verify signature', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixture);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             // "1Q9G4T5rLaf4Rz39WpkwGVM7e2jMxD2yRj";
             const claimToAddress = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
@@ -441,29 +449,44 @@ describe('ClaimContract', () => {
             });
         });
 
-        describe("BTC claiming", async function () {
+        async function runAddAndClaimTests(testSet: TestBalances) {
 
-            it("claiming", async () => {
-                const { claimContract } = await helpers.loadFixture(deployFixture);
-                const caller = signers[0];
-                const balances = getTestBalances_BTC();
-                for (const balance of balances.balances) {
-                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-                    await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-                    const currentBalance = await claimContract.balances(ripeAddress);
-                    expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-                }
+            let deployFixtureSpecified = () => {
+                return deployFixture(testSet.messagePrefix);
+            };
 
-                let cryptoSol = new CryptoSol(claimContract);
-                // cryptoSol.setLogDebug(true);
+            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+            const caller = signers[0];
+            const balances = testSet;
 
-                for (const balance of balances.balances) {
-                    let claimResult = await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
-                    await claimResult.wait();
-                    let balanceAfterClaim = await ethers.provider.getBalance(balance.dmdv4Address);
-                    let expectedBalance = ethers.toBigInt(balance.value);
-                    expect(balanceAfterClaim).to.equal(expectedBalance, 'Balance of DMDv4 adress matches defined Balance.');
-                }
+            for (const balance of balances.balances) {
+                const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+                await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
+                const currentBalance = await claimContract.balances(ripeAddress);
+                expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+            }
+        
+            let cryptoSol = new CryptoSol(claimContract);
+            // cryptoSol.setLogDebug(true);
+        
+            for (const balance of balances.balances) {
+                let claimResult = await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
+                await claimResult.wait();
+                let balanceAfterClaim = await ethers.provider.getBalance(balance.dmdv4Address);
+                let expectedBalance = ethers.toBigInt(balance.value);
+                expect(balanceAfterClaim).to.equal(expectedBalance, 'Balance of DMDv4 adress matches defined Balance.');
+            }
+        }
+        
+
+        describe("claiming", async function () {
+
+            it("claiming BTC", async () => {
+                runAddAndClaimTests(getTestBalances_BTC());
+            });
+
+            it("claiming DMD", async () => {
+                runAddAndClaimTests(getTestBalances_BTC());
             });
         });
     });
