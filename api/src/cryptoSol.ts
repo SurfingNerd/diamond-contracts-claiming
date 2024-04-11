@@ -34,18 +34,25 @@ export class CryptoSol {
 
   public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
     
-    console.log('claiming DMDv3Address: ', dmdV3Address);
     let postfixHex = stringToUTF8Hex(postfix);
 
     const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
     this.log('Claim Message: ' , claimMessage);
 
-    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature, claimMessage);
+    let prefixString = await this.prefixString();
+    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix);
+
+    //console.log("public key from signature: x:", publicKey.x, " y:", publicKey.y);
+    // we double prefix the message here !!!
+    //const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature, claimMessage);
 
     const rs = this.cryptoJS.signatureBase64ToRSV(signature);
 
     let pubKeyX = ensure0x(pubkey.x);
     let pubKeyY = ensure0x(pubkey.y);
+
+    this.log("pub key x:", pubKeyX);
+    this.log("pub key y:", pubKeyY);
     
 
     let dmdV3AddressFromSignatures = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
@@ -58,11 +65,20 @@ export class CryptoSol {
 
     this.log('dmdAddress:', dmdAddress);
 
-    //this.publicKeyToBitcoinAddressEssential()
-    ///this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
-    let v = ethers.toBeHex(rs.v);
+    // let v = ethers.toBeHex(rs.v);
+    // let v = '0x1b';
+    // let v = '0x1c';
+    let v = '';
 
-    // this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig);
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1b', rs.r, rs.s, dmdSig)) {
+      v = '0x1b';
+    } else if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1c', rs.r, rs.s, dmdSig)) {
+      v = '0x1c';
+    } else {
+      throw Error('Signature does not match');
+    }
+
+    return await this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig);
   }
 
   public setLogDebug(value: boolean) {

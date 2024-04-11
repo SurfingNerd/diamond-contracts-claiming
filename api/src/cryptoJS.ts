@@ -146,6 +146,7 @@ export class CryptoJS {
     const parsed = this.decodeSignature(signature);
     //this.log('parsed Signature:', parsed);
 
+    // todo: add support for DMD specific signing prefix
     const hash = bitcoinMessage.magicHash(messageContent);
 
     
@@ -163,7 +164,6 @@ export class CryptoJS {
 
     const x = ethers.hexlify(publicKey.slice(1));
     this.log("x: " + x);
-
 
     var ec = new EC.ec('secp256k1');
 
@@ -200,7 +200,8 @@ export class CryptoJS {
     return bs58Result;
   }
 
-  public getSignedMessageMagic(messagePrefix: string, message: string) {
+  public getSignedMessage(messagePrefix: string, message: string): Buffer {
+
     const messagePrefixBuffer = Buffer.from(messagePrefix, 'utf8');;
     const messageBuffer = Buffer.from(message, 'utf8');
     const messageVISize = varuint.encodingLength(message.length);
@@ -215,15 +216,16 @@ export class CryptoJS {
     return buffer;
   }
   
-  public getDMDSignedMessageMagic(message: string) {
+  public getDMDSignedMessage(message: string): Buffer  {
     const messagePrefix = '\u0018Diamond Signed Message:\n';
-    return this.getSignedMessageMagic(messagePrefix, message);
+    return this.getSignedMessage(messagePrefix, message);
   }
 
 
-  public getBitcoinSignedMessageMagic(message: string) {
+  public getBitcoinSignedMessage(message: string): Buffer  {
+   // const messagePrefix = '\u0018Bitcoin Signed Message:\n';
     const messagePrefix = '\u0018Bitcoin Signed Message:\n';
-    return this.getSignedMessageMagic(messagePrefix, message);
+    return this.getSignedMessage(messagePrefix, message);
   }
 
 }

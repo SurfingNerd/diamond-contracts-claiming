@@ -9,11 +9,57 @@ export function getTestBalances() {
     ];
 }
 
+interface TestBalance {
+    dmdv3Address: string;
+    dmdv4Address: string;
+    value: string;
+    signature: string;
+}
+
+interface TestBalances {
+    // if true, the BTC signing prefix is used, otherwise the DMD signing prefix is used
+    isDMDSigned: boolean;
+    // the seedphrase used to sign the message, just in case for reconstructing the test.
+    seedphrase: string;
+    // the interlude of the message, Not the prefix used by the signing (isDMDSigned determines if BTC or DMD signing prefix is used)  
+    messagePrefix: string;
+
+    // the balances with signatures to test
+    balances: TestBalance[];
+}
+
+export function getTestBalances_BTC() : TestBalances {
+    // balances for 
+    // const prefix = "";
+    // const seedPhrase: "BTC claiming on DMDv4";
+    // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
+    
+    let balances = [
+        // this signature has 32 byte as R and S value length.
+        { dmdv3Address: '13y2CTdWAdP8JuGWJUxUoPnWRZhdqjgYQF', dmdv4Address: '0x03fC83270Ee8c65dAa39a87296Ec7685384F7Cb1', value: '10000', signature: 'IJ+qCFWmxrZBS2gVNECVlaimliWKmxNK33/lEWn7nUn1CUxLTlqOp7bNKmq9hQuLA0j3/apqT4tkuYw4IrWMtUg=' },
+    ];
+
+    return {
+        isDMDSigned: false,
+        seedphrase: "BTC claiming on DMDv4",
+        messagePrefix: "",
+        balances: balances
+    }
+    
+}
 
 export function getTestBalances_claim_testnet() {
     // balances for const prefix = "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ";
-
-    return [
-        { dmdv3Address: 'dceCTudsSHMmWMswUNezkYVhTSskG7rnYh', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: '10000', signature: 'IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=' },
+  
+    let balances = [
+        // this signature has 32 byte as R and S value length.
+        {  dmdv3Address: 'dceCTudsSHMmWMswUNezkYVhTSskG7rnYh', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: '10000', signature: 'IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=' },
     ];
+
+    return {
+        isDMDSigned: false,
+        seedphrase: undefined, // we do not have a seedphrase for this test.
+        messagePrefix: "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ",
+        balances: balances
+    }
 }
