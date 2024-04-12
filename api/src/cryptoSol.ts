@@ -23,14 +23,10 @@ export class CryptoSol {
   }
 
   public constructor(public instance: ClaimContract) {
-
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
     }
-
-    
   }
-
 
   public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
     
@@ -55,21 +51,23 @@ export class CryptoSol {
     this.log("pub key y:", pubKeyY);
     
 
-    let dmdV3AddressFromSignatures = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
+    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
     
 
-    this.log('dmdV3AddressFromSignatures:', dmdV3AddressFromSignatures);
 
-    //  base58
-    let dmdAddress = base58check.encode(remove0x(dmdV3AddressFromSignatures));
+    this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
+    this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
+    this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
-    this.log('dmdAddress:', dmdAddress);
+    //console.log('dmdV3AddressFromSignature :', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
+    //console.log('dmdV3Address              :', dmdV3Address);
 
     // let v = ethers.toBeHex(rs.v);
     // let v = '0x1b';
     // let v = '0x1c';
     let v = '';
 
+    // we could do this if we calculate against JS instead of Solidity.
     if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1b', rs.r, rs.s, dmdSig)) {
       v = '0x1b';
     } else if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1c', rs.r, rs.s, dmdSig)) {
@@ -87,7 +85,6 @@ export class CryptoSol {
   }
 
   // private async ensurePrefixCache() {
-
   //   if (this.prefixCache === '') {
   //     this.prefixCache = await this.prefixString();
   //   }
