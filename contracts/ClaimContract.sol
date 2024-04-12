@@ -454,18 +454,6 @@ contract ClaimContract {
         }
     }
 
-    /// @dev Convert an uncompressed ECDSA public key into an Ethereum address
-    /// @param _publicKeyX X parameter of uncompressed ECDSA public key
-    /// @param _publicKeyY Y parameter of uncompressed ECDSA public key
-    /// @return Ethereum address generated from the ECDSA public key
-    function publicKeyToEthereumAddress(
-        bytes32 _publicKeyX,
-        bytes32 _publicKeyY
-    ) public pure returns (address) {
-        bytes32 hash = keccak256(abi.encodePacked(_publicKeyX, _publicKeyY));
-        return address(uint160(uint256((hash))));
-    }
-
     /**
      * @dev PUBLIC FACING: Derive an Ethereum address from an ECDSA public key
      * @param pubKeyX First  half of uncompressed ECDSA public key
