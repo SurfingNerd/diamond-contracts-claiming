@@ -99,7 +99,7 @@ contract ClaimContract {
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         //for simplification we only support a one-shot initialisation.
         require(
-            address(this).balance == 0,
+            address(this).balance == msg.value,
             "The Claim contract is already filled and cannot get filled a second time."
         );
         require(msg.value > 0, "there must be a value to fill up the ClaimContract");

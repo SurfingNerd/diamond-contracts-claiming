@@ -457,6 +457,36 @@ describe('ClaimContract', () => {
                 const totalBalance = await ethers.provider.getBalance(claimContractAddress);
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
             });
+
+            it('fill() a balance testset', async () => {
+                let deployFreshFixtureForBalanceTest = () => deployFixtureWithNoPrefix();
+                const { claimContract } = await helpers.loadFixture(deployFreshFixtureForBalanceTest);
+
+                const caller = signers[0];
+                const testbalances = getTestBalances();
+
+                let expectedTotalBalance = ethers.toBigInt('0');
+
+                let accounts: string[] = [];
+                let balances: string[] = [];
+
+                for (const balance of testbalances) {
+                    accounts.push(ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
+                    balances.push(balance.value);
+                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+                }
+
+                await claimContract.connect(caller).fill(accounts, balances, { value: expectedTotalBalance });
+
+                const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
+                expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
+                
+
+                for (const balance of testbalances) {
+                    const currentBalance = await claimContract.balances(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
+                    expect(currentBalance.toString()).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
+                }
+            });
         });
         
 
