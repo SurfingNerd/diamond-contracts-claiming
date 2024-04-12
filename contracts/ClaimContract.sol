@@ -412,31 +412,6 @@ contract ClaimContract {
         }
     }
 
-    function getPublicKeyFromBitcoinSignature(
-        bytes32 hashValue,
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) public pure returns (address) {
-        require(
-            v >= 4,
-            "Bitcoin adds a constant 4 to the v value. this signature seems to be invalid."
-        );
-        //#1: decode bitcoin signature.
-        //# get R, S, V and Hash of Signature.
-        //# do ecrecover on it.
-        //return "todo: implement this magic!";
-
-        return
-            ecrecover(
-                hashValue,
-                v - 4, //bitcoin signature use v that is +4 see reddit comment
-                //https://www.reddit.com/r/ethereum/comments/3gmbkx/how_do_i_verify_a_bitcoinsigned_message_in_an/ctzopoz
-                r,
-                s
-            );
-    }
-
     /// @dev returns the essential part of a Bitcoin-style address associated with an ECDSA public key
     /// @param _publicKeyX X coordinate of the ECDSA public key
     /// @param _publicKeyY Y coordinate of the ECDSA public key
