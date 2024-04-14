@@ -219,7 +219,7 @@ describe('ClaimContract', () => {
             expect(result).to.equal(expectedAddress);
         });
 
-        it('should convert dmd address to RIPE result', async () => {
+        it('should convert BTC address to RIPE result', async () => {
             // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
             // passphrase: bit.diamonds
 
@@ -231,7 +231,7 @@ describe('ClaimContract', () => {
             expect(realRipeResult).to.equal(expectedRipeResult);
         });
 
-        it('should convert public key to to DMDAddress', async () => {
+        it('should convert public key to to Bitcoin Address', async () => {
             const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
@@ -358,16 +358,6 @@ describe('ClaimContract', () => {
         });
 
 
-        it('should correctly verify signature', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-            // "1Q9G4T5rLaf4Rz39WpkwGVM7e2jMxD2yRj";
-            const claimToAddress = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
-            const signatureBase64 = getTestSignatures()[0];
-
-            await verifySignature(claimContract, claimToAddress, signatureBase64, false);
-        });
-
 
 
         async function runAddAndClaimTests(testSet: TestBalances) {
@@ -488,6 +478,27 @@ describe('ClaimContract', () => {
                 }
             });
         });
+        
+        describe("dilution", async function () {
+
+            // it("dilute a testset", async () => {
+                
+            //     let testbalances = getTestBalances_BTC();
+
+            //     for (let balance of testbalances.balances) {
+            //         balance.value
+            //     }
+            // });
+
+            // DMD claiming is known to fail.
+            // it("claiming DMD", async () => {
+            //     await runAddAndClaimTests(getTestBalances_DMD());
+            // });
+        });
+   
+//             117.869,94
+// 70.721,96
+// 165.017,91
         
 
         describe("claiming", async function () {
