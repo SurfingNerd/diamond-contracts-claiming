@@ -99,7 +99,7 @@ contract ClaimContract {
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         //for simplification we only support a one-shot initialisation.
         require(
-            address(this).balance == 0,
+            address(this).balance == msg.value,
             "The Claim contract is already filled and cannot get filled a second time."
         );
         require(msg.value > 0, "there must be a value to fill up the ClaimContract");
@@ -412,31 +412,6 @@ contract ClaimContract {
         }
     }
 
-    function getPublicKeyFromBitcoinSignature(
-        bytes32 hashValue,
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) public pure returns (address) {
-        require(
-            v >= 4,
-            "Bitcoin adds a constant 4 to the v value. this signature seems to be invalid."
-        );
-        //#1: decode bitcoin signature.
-        //# get R, S, V and Hash of Signature.
-        //# do ecrecover on it.
-        //return "todo: implement this magic!";
-
-        return
-            ecrecover(
-                hashValue,
-                v - 4, //bitcoin signature use v that is +4 see reddit comment
-                //https://www.reddit.com/r/ethereum/comments/3gmbkx/how_do_i_verify_a_bitcoinsigned_message_in_an/ctzopoz
-                r,
-                s
-            );
-    }
-
     /// @dev returns the essential part of a Bitcoin-style address associated with an ECDSA public key
     /// @param _publicKeyX X coordinate of the ECDSA public key
     /// @param _publicKeyY Y coordinate of the ECDSA public key
@@ -477,18 +452,6 @@ contract ClaimContract {
         ) {
             return ripemd160(abi.encodePacked(sha256(abi.encodePacked(hex"0014", publicKey))));
         }
-    }
-
-    /// @dev Convert an uncompressed ECDSA public key into an Ethereum address
-    /// @param _publicKeyX X parameter of uncompressed ECDSA public key
-    /// @param _publicKeyY Y parameter of uncompressed ECDSA public key
-    /// @return Ethereum address generated from the ECDSA public key
-    function publicKeyToEthereumAddress(
-        bytes32 _publicKeyX,
-        bytes32 _publicKeyY
-    ) public pure returns (address) {
-        bytes32 hash = keccak256(abi.encodePacked(_publicKeyX, _publicKeyY));
-        return address(uint160(uint256((hash))));
     }
 
     /**
