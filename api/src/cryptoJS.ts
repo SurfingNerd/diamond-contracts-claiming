@@ -136,7 +136,8 @@ export class CryptoJS {
     }
   }
 
-  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string): { publicKey: string, x: string, y: string } {
+
+  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string, isDMDSigned: boolean): { publicKey: string, x: string, y: string } {
 
     //const signatureBase64 = "IBHr8AT4TZrOQSohdQhZEJmv65ZYiPzHhkOxNaOpl1wKM/2FWpraeT8L9TaphHI1zt5bI3pkqxdWGcUoUw0/lTo=";
     //const address = "";
@@ -147,7 +148,7 @@ export class CryptoJS {
     //this.log('parsed Signature:', parsed);
 
     // todo: add support for DMD specific signing prefix
-    const hash = bitcoinMessage.magicHash(messageContent);
+    const hash = bitcoinMessage.magicHash(messageContent, CryptoJS.getSignaturePrefix(isDMDSigned));
 
     
     const publicKey = secp256k1.ecdsaRecover(
@@ -214,17 +215,18 @@ export class CryptoJS {
     messageBuffer.copy(buffer, messagePrefix.length + messageVISize);
     return buffer;
   }
+
+  public static getSignaturePrefix(isDMDSigned: boolean): string {
+    return isDMDSigned ? '\u0018Diamond Signed Message:\n' : '\u0018Bitcoin Signed Message:\n';
+  }
   
   public getDMDSignedMessage(message: string): Buffer  {
-    const messagePrefix = '\u0018Diamond Signed Message:\n';
-    return this.getSignedMessage(messagePrefix, message);
+    return this.getSignedMessage(CryptoJS.getSignaturePrefix(true), message);
   }
 
 
   public getBitcoinSignedMessage(message: string): Buffer  {
-   // const messagePrefix = '\u0018Bitcoin Signed Message:\n';
-    const messagePrefix = '\u0018Bitcoin Signed Message:\n';
-    return this.getSignedMessage(messagePrefix, message);
+    return this.getSignedMessage(CryptoJS.getSignaturePrefix(false), message);
   }
 
 }
