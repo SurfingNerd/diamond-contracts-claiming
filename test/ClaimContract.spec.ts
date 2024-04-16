@@ -14,7 +14,7 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD } from "./fixtures/balances";
+import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -499,6 +499,36 @@ describe('ClaimContract', () => {
 //             117.869,94
 // 70.721,96
 // 165.017,91
+
+        describe("DMD Diamond", async function () {  
+            it("DMD Signatures from same address point to same public key.", async () => {
+                
+                let testset = getTestBalances_DMD_cli_same_address();
+                let x = "";
+                let y = ""; 
+
+                //const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+                //let cryptoSol = new CryptoSol(claimContract);
+
+                for(let balance of testset.balances) {
+
+                    let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, true);
+
+                    if (x === "") {
+
+                        x = key.x;
+                        y = key.y;
+                    } else {
+                        expect(x).to.equal(key.x, "Public key is not the same for all signatures.");
+                        expect(y).to.equal(key.y, "Public key is not the same for all signatures.");
+
+                        if (x !== key.x || y !== key.y) {
+                            throw new Error("Public key is not the same for all signatures.");
+                        }
+                    }
+                }
+            });
+        });
         
 
         describe("claiming", async function () {
