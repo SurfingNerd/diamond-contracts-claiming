@@ -14,7 +14,7 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli } from "./fixtures/balances";
+import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -565,6 +565,10 @@ describe('ClaimContract', () => {
             // DMD claiming is known to fail.
             it("claiming DMD", async () => {
                 await runAddAndClaimTests(getTestBalances_DMD_cli());
+            });
+
+            it("claiming DMD with prefix", async () => {
+                await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
         });
     });

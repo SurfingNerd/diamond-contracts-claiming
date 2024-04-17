@@ -60,7 +60,7 @@ export function getTestBalances_DMD_cli(): TestBalances {
         
         
         { dmdv3Address: 'dHibMHA3YtjnfjGiPn2gbVFz4hZ6un1zoJ', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IEeNNP3WYEFg91TM+A+I1tarLhDyV6Hpz494ny8KFIM4Tt2fhzjcEjxPQhKGaEVeZqO6/5qYTZGw9DK9tKzcO7c=' },  
-        
+                
     ];
 
     return {
@@ -144,6 +144,20 @@ export function getTestBalances_DMD() {
     let balances = [
         // this signature has 32 byte as R and S value length.
         {  dmdv3Address: 'dceCTudsSHMmWMswUNezkYVhTSskG7rnYh', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: '10000', signature: 'IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=' },
+    ];
+
+    return {
+        isDMDSigned: true,
+        seedphrase: undefined, // we do not have a seedphrase for this test.
+        messagePrefix: "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ",
+        balances: balances
+    }
+}
+
+/// dmd with prefix: "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: "
+export function getTestBalances_DMD_with_prefix(): TestBalances {
+    let balances = [
+        { dmdv3Address: 'dKnjYUHFJPunnpA5vw1U8rd7WrLgh9wcdY', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IAAbfHCOsm8WB+ARRAvNuaIdTKIOa029UpdZKhaH/fmyd8dhBe2uOOaANWSVhiQ9MwhonPqp30U5WzXcXkfZJlk=' },
     ];
 
     return {
