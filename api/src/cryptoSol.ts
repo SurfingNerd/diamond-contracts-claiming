@@ -60,7 +60,10 @@ export class CryptoSol {
       throw Error('Signature does not match');
     }
 
-    return await this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig);
+    let claimOperation = this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let receipt = await (await claimOperation).wait();
+    console.log("receipt: ", receipt?.toJSON())
+    return receipt;
   }
 
   public setLogDebug(value: boolean) {
@@ -193,7 +196,7 @@ export class CryptoSol {
     const fromAccount = signers[0];
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
 
-    await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value });
+    return (await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
   }
 
   // public async claim(dmdv3Address: string, payoutAddress: string, signature: string ) {
