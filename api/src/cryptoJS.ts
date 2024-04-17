@@ -21,6 +21,31 @@ const SEGWIT_TYPES = {
 }
 
 
+const metadata = {
+  diamond: {
+  messagePrefix: '\x18Diamond Signed Message:\n',
+  bip32: {
+    public: 0x0488B21E,
+    private: 0x0488ADE4,
+  },
+  pubKeyHash: 0x5a,
+  scriptHash: 0x08,
+  wif: 0xda,
+  },
+
+  bitcoin: {
+    messagePrefix:"\x18Bitcoin Signed Message:\n",
+    bech32:"bc",
+    bip32:
+    {
+      public:76067358,
+      private:76066276
+    },
+    pubKeyHash:0,
+    scriptHash:5,
+    wif:128}
+}
+
 /**
  * Crypto functions used in this project implemented in JS.
  */
@@ -94,25 +119,15 @@ export class CryptoJS {
   }
 
   public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer, v: number } {
+
+    
+
     //var ec = new EC.ec('secp256k1');
 
     //const input = new EC. SignatureInput();
 
-
-    // const signature = new EC.ec.Signature(signatureBase64, 'base64');
-
-    // const rr = signature.r.toBuffer();
-    // const ss = signature.s.toBuffer();
-    // const vv = signature.recoveryParam;
-
-    // this.log(`r: ${rr.toString('hex')}`);
-    // this.log(`s: ${ss.toString('hex')}`);
-    // this.log(`v: ${vv}`);
-
-    // return { r: rr, s: ss, v: vv};
-
-    // where is the encoding of the signature documented ?
-    //is that DER encoding ? Or the Significant part of DER ?
+    // 30 <total length> 02 <length of r> <r> 02 <length of s> <s>
+    
 
     const sig = Buffer.from(signatureBase64, 'base64');
 
@@ -122,23 +137,31 @@ export class CryptoJS {
     //thesis:
     // 20 is a header, and v is not included in the signature ?
     const sizeOfRComponent = sig[0];
-    this.log('sizeOfR:', sizeOfRComponent);
+    if (sizeOfRComponent !== 32) { 
+      console.log(`invalid size of R in signature: ${sizeOfRComponent}:`, signatureBase64);
+    }
+
+    
 
     const rStart = 1; // r Start is always one (1).
     const sStart = 1 + sizeOfRComponent;
     const sizeOfSComponent = sig.length - sStart;
-    this.log('sizeOfS:', sizeOfSComponent);
+    console.log('sizeOfS:', sizeOfSComponent);
 
     if (sizeOfRComponent > sig.length) {
       throw new Error('sizeOfRComponent is too Big!!');
     }
     const r = sig.subarray(rStart, rStart + sizeOfRComponent);
     const s = sig.subarray(sStart, 65);
-    const v = 0; //sig[64];
+
+    
+    const v = sig[0];
 
     this.log(`r: ${r.toString('hex')}`);
     this.log(`s: ${s.toString('hex')}`);
     this.log(`v: ${v}`);
+
+    //bitcoinjs-lib
 
     return { r, s, v };
   }
