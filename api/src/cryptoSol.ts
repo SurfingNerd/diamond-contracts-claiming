@@ -36,11 +36,7 @@ export class CryptoSol {
     this.log('Claim Message: ' , claimMessage);
 
     let prefixString = await this.prefixString();
-    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix);
-
-    //console.log("public key from signature: x:", publicKey.x, " y:", publicKey.y);
-    // we double prefix the message here !!!
-    //const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature, claimMessage);
+    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, dmdSig);
 
     const rs = this.cryptoJS.signatureBase64ToRSV(signature);
 
@@ -49,30 +45,18 @@ export class CryptoSol {
 
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
+
+    this.log("v:", rs.v);
     
 
     let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
-    
-
 
     this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
     this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
-    //console.log('dmdV3AddressFromSignature :', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
-    //console.log('dmdV3Address              :', dmdV3Address);
-
-    // let v = ethers.toBeHex(rs.v);
-    // let v = '0x1b';
-    // let v = '0x1c';
-    let v = '';
-
-    // we could do this if we calculate against JS instead of Solidity.
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1b', rs.r, rs.s, dmdSig)) {
-      v = '0x1b';
-    } else if (await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, '0x1c', rs.r, rs.s, dmdSig)) {
-      v = '0x1c';
-    } else {
+    let v = rs.v - 4;
+    if (!await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig)) { 
       throw Error('Signature does not match');
     }
 
