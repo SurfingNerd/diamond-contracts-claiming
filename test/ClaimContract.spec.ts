@@ -14,7 +14,7 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address } from "./fixtures/balances";
+import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -69,7 +69,7 @@ describe('ClaimContract', () => {
 
         const prefixString = new TextDecoder("utf-8").decode(prefixBuffer);
 
-        const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, prefixString + claimToAddress + postfix);
+        const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, prefixString + claimToAddress + postfix, false);
         const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
 
         const txResult1 =
@@ -241,6 +241,8 @@ describe('ClaimContract', () => {
 
             const { x, y } = cryptoJS.getXYfromPublicKeyHex(publicKeyHex);
 
+            
+
             const essentialPart = await claimContract.publicKeyToBitcoinAddress(
                 ensure0x(x.toString('hex')),
                 ensure0x(y.toString('hex')),
@@ -253,6 +255,11 @@ describe('ClaimContract', () => {
             );
 
             expect(bs58Result).to.equal(expectedAddress);
+
+            // we are also cross checking the result with the result from the cryptoJS library,
+            // (that uses bitcoin payments internaly to verify)
+            const addressFromCryptJS = cryptoJS.publicKeyToBitcoinAddress(publicKeyHex);
+            expect(bs58Result).to.equal(addressFromCryptJS);
         });
 
         it('correct hash for claim message', async () => {
@@ -271,10 +278,10 @@ describe('ClaimContract', () => {
 
             const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
             const signatureBase64 = "IBHr8AT4TZrOQSohdQhZEJmv65ZYiPzHhkOxNaOpl1wKM/2FWpraeT8L9TaphHI1zt5bI3pkqxdWGcUoUw0/lTo=";
-            const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
+            const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message, false);
 
             expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-            expect(key.y).equal("99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
+            expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
@@ -294,10 +301,10 @@ describe('ClaimContract', () => {
 
             for (let index = 0; index < signaturesBase64.length; index++) {
                 const signatureBase64 = signaturesBase64[index];
-                const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message);
+                const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message, false);
 
                 expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-                expect(key.y).equal("99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
+                expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
                 expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
             }
         });
@@ -507,13 +514,15 @@ describe('ClaimContract', () => {
                 let x = "";
                 let y = ""; 
 
-                //const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-                //let cryptoSol = new CryptoSol(claimContract);
+                const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+                let cryptoSol = new CryptoSol(claimContract);
 
                 for(let balance of testset.balances) {
 
                     let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, true);
 
+                    //cryptoJS.publicKeyToBTCStyleAddress(key.x, key.y, true);
+                    //cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress()
                     if (x === "") {
 
                         x = key.x;
@@ -521,12 +530,14 @@ describe('ClaimContract', () => {
                     } else {
                         expect(x).to.equal(key.x, "Public key is not the same for all signatures.");
                         expect(y).to.equal(key.y, "Public key is not the same for all signatures.");
-
-                        if (x !== key.x || y !== key.y) {
-                            throw new Error("Public key is not the same for all signatures.");
-                        }
                     }
+
+                    //console.log(cryptoJS.publicKeyToBitcoinAddress(key.publicKey));
                 }
+            });
+
+            it("rejecting double add balances for defined DMD address", async () => {
+                await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.rejectedWith("There is already a balance defined for this old address");
             });
         });
         
@@ -537,9 +548,9 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_BTC());
             });
 
-            // DMD claiming is known to fail.
+            //DMD claiming is known to fail.
             // it("claiming DMD", async () => {
-            //     await runAddAndClaimTests(getTestBalances_DMD());
+            //     await runAddAndClaimTests(getTestBalances_DMD_cli());
             // });
         });
     });

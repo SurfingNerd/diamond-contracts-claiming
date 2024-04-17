@@ -1,13 +1,15 @@
 import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
-import { ensure0x, hexToBuf, prefixBuf } from './cryptoHelpers';
+import { ensure0x, hexToBuf, prefixBuf, remove0x } from './cryptoHelpers';
 import varuint from 'varuint-bitcoin';
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
 //var bs58check = require('bs58check');
 
 import bitcoinMessage from 'bitcoinjs-message';
+import * as bitcoin from 'bitcoinjs-lib';
+
 // const secp256k1 = require('secp256k1')
 
 import * as secp256k1 from "secp256k1";
@@ -23,6 +25,9 @@ const SEGWIT_TYPES = {
  * Crypto functions used in this project implemented in JS.
  */
 export class CryptoJS {
+
+
+  
 
   private logDebug: boolean = false;
 
@@ -40,15 +45,39 @@ export class CryptoJS {
     }
   }
 
+  /**
+   * returns the DMD Diamond V3 address from the public key.
+   * @param x x coordinate of the public key, with prefix 0x
+   * @param y y coordinate of the public key, with prefix 0x
+   */
+  public publicKeyToBitcoinAddress(publicKey: string): string {
+    
+    // const hash = bitcoinMessage.magicHash(publicKeyBuffer, CryptoJS.getSignaturePrefix(false));
+    // const publicKey = secp256k1.publicKeyConvert(publicKeyBuffer, true);
+    //const address = bitcoinMessage.pubKeyToAddress(publicKey, true);
+    //return address;
 
-  public async messageToHash(messageString: string) {
 
-    // const buffer = Buffer.from(messageString, 'utf-8');
-    // const hash =  await this.instance.methods.calcHash256(buffer.toString('hex')).call();
-    // this.log('messageToHash');
-    // this.log(hash);
-    // return hash;
+    //const publicKeyBuffer = Buffer.from(x.slice(2) + y.slice(2), 'hex');
+
+    const pubkey = Buffer.from( remove0x(publicKey), 'hex' );
+    const { address } = bitcoin.payments.p2pkh({ pubkey });
+
+    return address!;
+    // todo: support DMD here
+    let network = bitcoin.networks.bitcoin;
+
+    //return bitcoin.address.fromOutputScript(publicKeyBuffer, network);
+    // Parse the public key
+    //const publicKey = Buffer.from(publicKeyBuffer);
+
+    // Generate the Bitcoin address
+    //const { address } = bitcoin.payments.p2pkh({ pubkey: publicKeyBuffer });
+
+
   }
+    
+
 
   /**
    *
