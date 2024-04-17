@@ -241,7 +241,7 @@ describe('ClaimContract', () => {
 
             const { x, y } = cryptoJS.getXYfromPublicKeyHex(publicKeyHex);
 
-            
+
 
             const essentialPart = await claimContract.publicKeyToBitcoinAddress(
                 ensure0x(x.toString('hex')),
@@ -256,6 +256,7 @@ describe('ClaimContract', () => {
 
             expect(bs58Result).to.equal(expectedAddress);
 
+            console.log();
             // we are also cross checking the result with the result from the cryptoJS library,
             // (that uses bitcoin payments internaly to verify)
             const addressFromCryptJS = cryptoJS.publicKeyToBitcoinAddress(publicKeyHex);
@@ -386,12 +387,14 @@ describe('ClaimContract', () => {
                 const currentBalance = await claimContract.balances(ripeAddress);
                 expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
             }
-        
+
             for (const balance of balances.balances) {
+                let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
                 let claimResult = await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
                 await claimResult.wait();
                 let balanceAfterClaim = await ethers.provider.getBalance(balance.dmdv4Address);
-                let expectedBalance = ethers.toBigInt(balance.value);
+
+                let expectedBalance = ethers.toBigInt(balance.value) + balanceBeforeClaim;
                 expect(balanceAfterClaim).to.equal(expectedBalance, 'Balance of DMDv4 adress matches defined Balance.');
             }
         }
@@ -431,7 +434,7 @@ describe('ClaimContract', () => {
             });
         });
 
-        describe("balance", async function() {
+        describe("balance", async function () {
 
             it('should correctly add balances', async () => {
                 const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
@@ -477,7 +480,7 @@ describe('ClaimContract', () => {
 
                 const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-                
+
 
                 for (const balance of testbalances) {
                     const currentBalance = await claimContract.balances(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
@@ -485,11 +488,11 @@ describe('ClaimContract', () => {
                 }
             });
         });
-        
+
         describe("dilution", async function () {
 
             // it("dilute a testset", async () => {
-                
+
             //     let testbalances = getTestBalances_BTC();
 
             //     for (let balance of testbalances.balances) {
@@ -502,24 +505,24 @@ describe('ClaimContract', () => {
             //     await runAddAndClaimTests(getTestBalances_DMD());
             // });
         });
-   
-//             117.869,94
-// 70.721,96
-// 165.017,91
 
-        describe("DMD Diamond", async function () {  
+        //             117.869,94
+        // 70.721,96
+        // 165.017,91
+
+        describe("DMD Diamond", async function () {
             it("DMD Signatures from same address point to same public key.", async () => {
-                
+
                 let testset = getTestBalances_DMD_cli_same_address();
                 let x = "";
-                let y = ""; 
+                let y = "";
 
                 const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-                let cryptoSol = new CryptoSol(claimContract);
+                //let cryptoSol = new CryptoSol(claimContract);
 
-                for(let balance of testset.balances) {
+                for (let balance of testset.balances) {
 
-                    let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, true);
+                    let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, testset.isDMDSigned);
 
                     //cryptoJS.publicKeyToBTCStyleAddress(key.x, key.y, true);
                     //cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress()
@@ -532,6 +535,17 @@ describe('ClaimContract', () => {
                         expect(y).to.equal(key.y, "Public key is not the same for all signatures.");
                     }
 
+
+
+                   // const essentialPart = await claimContract.publicKeyToBitcoinAddress(x, y, 1);
+                   // const bs58Result = cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
+                   //     essentialPart,
+                   //     '24'
+                   // );
+
+                   // console.log(balance.dmdv3Address);
+                   // console.log(bs58Result);
+
                     //console.log(cryptoJS.publicKeyToBitcoinAddress(key.publicKey));
                 }
             });
@@ -540,7 +554,7 @@ describe('ClaimContract', () => {
                 await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.rejectedWith("There is already a balance defined for this old address");
             });
         });
-        
+
 
         describe("claiming", async function () {
 
@@ -548,10 +562,10 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_BTC());
             });
 
-            //DMD claiming is known to fail.
-            // it("claiming DMD", async () => {
-            //     await runAddAndClaimTests(getTestBalances_DMD_cli());
-            // });
+            // DMD claiming is known to fail.
+            it("claiming DMD", async () => {
+                await runAddAndClaimTests(getTestBalances_DMD_cli());
+            });
         });
     });
 
