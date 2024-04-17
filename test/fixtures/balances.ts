@@ -22,15 +22,14 @@ export function getTestBalances() {
 // IChOonnXj+Mq2aJcQF8cQ+ZUfF22DcNB0mdQAO9GxyObbVl5XJHniGHVkSRgZJZU3qIt7uLkmAtGJCuOByF/e6g=
 export function getTestBalances_DMD_cli_same_address() : TestBalances {
     let balances = [
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IChOonnXj+Mq2aJcQF8cQ+ZUfF22DcNB0mdQAO9GxyObbVl5XJHniGHVkSRgZJZU3qIt7uLkmAtGJCuOByF/e6g=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x996E342F23693B625A41761479cc74d133792D0A', value: '10000', signature: 'H03UKIim1lQx9v/igL3bjt1fXGZUAHFWyboPOu2Y9/DFHcNI8sFfUSzUPvXh8crUlXxAOQtk+WAzO+CPsDdt+I8=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x3393C9F655C153B178978a2913844510b7EE40AE', value: '10000', signature: 'INU4te0lw1Tun2JCssY4xS3a8fkZEbdeW/U+f/2M5+T4aD6IKx/y7F1k4Rg7UBDsVGsEeLdR4uO7H2NyWmDphbc=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x39f2f917011bfa62071293a7095735BD4a0044eD', value: '10000', signature: 'IF6PriDQe9UUnWWLsITGxpq8kmQC8FtkIPtszYCnLdCuTK7dNWe82va69/z03YFhOlB8KhU2Kp8yo0dW0z4/Kfs=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x877ef6d8e6d89A0a338A5A991F0C281778C24B6D', value: '10000', signature: 'H6uJIAvm5nl+Ub7ybWjauowjndYj8zuDZhoeYwR+sl/4TP6GR09IR5MADq35UKQs/n3es94rVftPHh1eifHh0D4=' },
-        // 
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x3db37B2f9a09a6136Ae4aed8402CeDe821FC27E3', value: '10000', signature: 'H02krz1YKQWbU8/b4q2JvI+e2Ai0rVM6HuiBWrdXJZq+N0HUfMv+cTYjoqcJg2aPYBV+Nwiv+jIhz5EHMvXaSqA=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xE79C0B2cc688Ee037718A03be2359D12E81D231d', value: '10000', signature: 'H7l0Zy/XQko/lNSNAoU5kVuYeM3IoJZklHrml8zifgbJShHV5bezUPcCfmE/yXt0GUXXLaAyVwjZE6W9kwGBgk0=' },
-        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xe79D037E4520dbFB395BA38a5B70e9EfC6c40760', value: '10000', signature: 'IEzBr/rLqReoQh/LMNt0yH6m0MDxgQKsuZMq4wKqNyCaG6pJzPAQ5/Lfla/khvsfur/3l/1KhRiPi0VoqXp4Vqc=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '100003456', signature: 'IChOonnXj+Mq2aJcQF8cQ+ZUfF22DcNB0mdQAO9GxyObbVl5XJHniGHVkSRgZJZU3qIt7uLkmAtGJCuOByF/e6g=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x996E342F23693B625A41761479cc74d133792D0A', value: '100005678', signature: 'H03UKIim1lQx9v/igL3bjt1fXGZUAHFWyboPOu2Y9/DFHcNI8sFfUSzUPvXh8crUlXxAOQtk+WAzO+CPsDdt+I8=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x3393C9F655C153B178978a2913844510b7EE40AE', value: '100345500', signature: 'INU4te0lw1Tun2JCssY4xS3a8fkZEbdeW/U+f/2M5+T4aD6IKx/y7F1k4Rg7UBDsVGsEeLdR4uO7H2NyWmDphbc=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x39f2f917011bfa62071293a7095735BD4a0044eD', value: '100345500', signature: 'IF6PriDQe9UUnWWLsITGxpq8kmQC8FtkIPtszYCnLdCuTK7dNWe82va69/z03YFhOlB8KhU2Kp8yo0dW0z4/Kfs=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x877ef6d8e6d89A0a338A5A991F0C281778C24B6D', value: '100377500', signature: 'H6uJIAvm5nl+Ub7ybWjauowjndYj8zuDZhoeYwR+sl/4TP6GR09IR5MADq35UKQs/n3es94rVftPHh1eifHh0D4=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0x3db37B2f9a09a6136Ae4aed8402CeDe821FC27E3', value: '245670000', signature: 'H02krz1YKQWbU8/b4q2JvI+e2Ai0rVM6HuiBWrdXJZq+N0HUfMv+cTYjoqcJg2aPYBV+Nwiv+jIhz5EHMvXaSqA=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xE79C0B2cc688Ee037718A03be2359D12E81D231d', value: '103456000', signature: 'H7l0Zy/XQko/lNSNAoU5kVuYeM3IoJZklHrml8zifgbJShHV5bezUPcCfmE/yXt0GUXXLaAyVwjZE6W9kwGBgk0=' },
+        { dmdv3Address: 'dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11', dmdv4Address: '0xe79D037E4520dbFB395BA38a5B70e9EfC6c40760', value: '134567700', signature: 'IEzBr/rLqReoQh/LMNt0yH6m0MDxgQKsuZMq4wKqNyCaG6pJzPAQ5/Lfla/khvsfur/3l/1KhRiPi0VoqXp4Vqc=' },
     ];
 
     return {
