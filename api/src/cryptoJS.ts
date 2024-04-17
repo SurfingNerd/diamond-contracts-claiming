@@ -1,7 +1,7 @@
 import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
-import { hexToBuf, prefixBuf } from './cryptoHelpers';
+import { ensure0x, hexToBuf, prefixBuf } from './cryptoHelpers';
 import varuint from 'varuint-bitcoin';
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
@@ -163,14 +163,17 @@ export class CryptoJS {
     //it's 02 or 03 prefix, depending if y is ODD or not.
     this.log("publicKey: ", ethers.hexlify(publicKey));
 
-    const x = ethers.hexlify(publicKey.slice(1));
-    this.log("x: " + x);
+  
 
     var ec = new EC.ec('secp256k1');
 
     const key = ec.keyFromPublic(publicKey);
-    const y = key.getPublic().getY().toString('hex');
+    //const x = ethers.hexlify(publicKey.slice(1));
+    //this.log("x: " + x);
+    const x = ensure0x(key.getPublic().getX().toString('hex'));
+    const y = ensure0x(key.getPublic().getY().toString('hex'));
 
+    
     this.log("y: " + y);
 
     return { publicKey: ethers.hexlify(publicKey), x, y };
