@@ -138,7 +138,7 @@ export class CryptoJS {
     // 20 is a header, and v is not included in the signature ?
     const sizeOfRComponent = sig[0];
     if (sizeOfRComponent !== 32) { 
-      console.log(`invalid size of R in signature: ${sizeOfRComponent}:`, signatureBase64);
+      this.log(`invalid size of R in signature: ${sizeOfRComponent}:`, signatureBase64);
     }
 
     
@@ -146,7 +146,10 @@ export class CryptoJS {
     const rStart = 1; // r Start is always one (1).
     const sStart = 1 + sizeOfRComponent;
     const sizeOfSComponent = sig.length - sStart;
-    console.log('sizeOfS:', sizeOfSComponent);
+
+    if (sizeOfSComponent !== 32) { 
+      this.log(`invalid size of S in signature: ${sizeOfRComponent}:`, signatureBase64);
+    }
 
     if (sizeOfRComponent > sig.length) {
       throw new Error('sizeOfRComponent is too Big!!');
