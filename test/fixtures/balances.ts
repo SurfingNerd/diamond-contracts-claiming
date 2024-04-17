@@ -75,10 +75,8 @@ export function getTestBalances_DMD_cli(): TestBalances {
 
 // those balances have been created with a diamond-cli tool,
 // but they create a invalid signature size, like having a 33 or 31 byte long R or S value, what cannot be processed in the ethereum VM without further tricks.
-// example:
-// ./diamond-cli getnewaddress
-// ./diamond-cli signmessage "dDdaBZRTDiybXrPvYdvKdydjsnbG3kfd11" "0xEb44B81852A2705701A59D454d1a33DA7a71E169"
-// IChOonnXj+Mq2aJcQF8cQ+ZUfF22DcNB0mdQAO9GxyObbVl5XJHniGHVkSRgZJZU3qIt7uLkmAtGJCuOByF/e6g=
+// Those are `valid` signatures, but they cannot be processed.
+// more INfo: https://github.com/DMDcoin/diamond-contracts-claiming/issues/21
 export function getTestBalances_DMD_cli_invalid_signature_size(): TestBalances {
     let balances = [
         { dmdv3Address: 'dFuGh7FqSp16YkCLJe24kb3DLvU35fm199', dmdv4Address: '0xC477BA27c63Cb22C023a1E41ae4a43ec9024b584', value: '10000', signature: 'H6jrO+Cq5VUrYgoRM/NmtxJxDLesG0gbzn1qvdaxPHwiWJA/ypgnbm8kyX2c+zEdRejr634wVZp2Q/d4W7Zu4fI=' },
