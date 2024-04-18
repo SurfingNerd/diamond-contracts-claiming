@@ -390,8 +390,7 @@ describe('ClaimContract', () => {
 
             for (const balance of balances.balances) {
                 let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
-                let claimResult = await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
-                await claimResult.wait();
+                await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
                 let balanceAfterClaim = await ethers.provider.getBalance(balance.dmdv4Address);
 
                 let expectedBalance = ethers.toBigInt(balance.value) + balanceBeforeClaim;
