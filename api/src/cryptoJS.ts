@@ -1,13 +1,15 @@
 import bs58check from 'bs58check';
 import EC from 'elliptic'
 import BN from 'bn.js';
-import { hexToBuf, prefixBuf } from './cryptoHelpers'
+import { ensure0x, hexToBuf, prefixBuf, remove0x } from './cryptoHelpers';
 import varuint from 'varuint-bitcoin';
 
 //import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
 //var bs58check = require('bs58check');
 
-const bitcoinMessage = require('bitcoinjs-message');
+import bitcoinMessage from 'bitcoinjs-message';
+import * as bitcoin from 'bitcoinjs-lib';
+
 // const secp256k1 = require('secp256k1')
 
 import * as secp256k1 from "secp256k1";
@@ -19,10 +21,38 @@ const SEGWIT_TYPES = {
 }
 
 
+const metadata = {
+  diamond: {
+  messagePrefix: '\x18Diamond Signed Message:\n',
+  bip32: {
+    public: 0x0488B21E,
+    private: 0x0488ADE4,
+  },
+  pubKeyHash: 0x5a,
+  scriptHash: 0x08,
+  wif: 0xda,
+  },
+
+  bitcoin: {
+    messagePrefix:"\x18Bitcoin Signed Message:\n",
+    bech32:"bc",
+    bip32:
+    {
+      public:76067358,
+      private:76066276
+    },
+    pubKeyHash:0,
+    scriptHash:5,
+    wif:128}
+}
+
 /**
  * Crypto functions used in this project implemented in JS.
  */
 export class CryptoJS {
+
+
+  
 
   private logDebug: boolean = false;
 
@@ -40,15 +70,39 @@ export class CryptoJS {
     }
   }
 
+  /**
+   * returns the DMD Diamond V3 address from the public key.
+   * @param x x coordinate of the public key, with prefix 0x
+   * @param y y coordinate of the public key, with prefix 0x
+   */
+  public publicKeyToBitcoinAddress(publicKey: string): string {
+    
+    // const hash = bitcoinMessage.magicHash(publicKeyBuffer, CryptoJS.getSignaturePrefix(false));
+    // const publicKey = secp256k1.publicKeyConvert(publicKeyBuffer, true);
+    //const address = bitcoinMessage.pubKeyToAddress(publicKey, true);
+    //return address;
 
-  public async messageToHash(messageString: string) {
 
-    // const buffer = Buffer.from(messageString, 'utf-8');
-    // const hash =  await this.instance.methods.calcHash256(buffer.toString('hex')).call();
-    // this.log('messageToHash');
-    // this.log(hash);
-    // return hash;
+    //const publicKeyBuffer = Buffer.from(x.slice(2) + y.slice(2), 'hex');
+
+    const pubkey = Buffer.from( remove0x(publicKey), 'hex' );
+    const { address } = bitcoin.payments.p2pkh({ pubkey });
+
+    return address!;
+    // todo: support DMD here
+    let network = bitcoin.networks.bitcoin;
+
+    //return bitcoin.address.fromOutputScript(publicKeyBuffer, network);
+    // Parse the public key
+    //const publicKey = Buffer.from(publicKeyBuffer);
+
+    // Generate the Bitcoin address
+    //const { address } = bitcoin.payments.p2pkh({ pubkey: publicKeyBuffer });
+
+
   }
+    
+
 
   /**
    *
@@ -64,26 +118,16 @@ export class CryptoJS {
     return buffer;
   }
 
-  public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer, v: number } {
+  public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer } {
+
+    
+
     //var ec = new EC.ec('secp256k1');
 
     //const input = new EC. SignatureInput();
 
-
-    // const signature = new EC.ec.Signature(signatureBase64, 'base64');
-
-    // const rr = signature.r.toBuffer();
-    // const ss = signature.s.toBuffer();
-    // const vv = signature.recoveryParam;
-
-    // this.log(`r: ${rr.toString('hex')}`);
-    // this.log(`s: ${ss.toString('hex')}`);
-    // this.log(`v: ${vv}`);
-
-    // return { r: rr, s: ss, v: vv};
-
-    // where is the encoding of the signature documented ?
-    //is that DER encoding ? Or the Significant part of DER ?
+    // 30 <total length> 02 <length of r> <r> 02 <length of s> <s>
+    
 
     const sig = Buffer.from(signatureBase64, 'base64');
 
@@ -93,25 +137,33 @@ export class CryptoJS {
     //thesis:
     // 20 is a header, and v is not included in the signature ?
     const sizeOfRComponent = sig[0];
-    this.log('sizeOfR:', sizeOfRComponent);
+    if (sizeOfRComponent !== 32) { 
+      this.log(`invalid size of R in signature: ${sizeOfRComponent}:`, signatureBase64);
+    }
+
+    
 
     const rStart = 1; // r Start is always one (1).
     const sStart = 1 + sizeOfRComponent;
     const sizeOfSComponent = sig.length - sStart;
-    this.log('sizeOfS:', sizeOfSComponent);
+
+    if (sizeOfSComponent !== 32) { 
+      this.log(`invalid size of S in signature: ${sizeOfRComponent}:`, signatureBase64);
+    }
 
     if (sizeOfRComponent > sig.length) {
       throw new Error('sizeOfRComponent is too Big!!');
     }
     const r = sig.subarray(rStart, rStart + sizeOfRComponent);
     const s = sig.subarray(sStart, 65);
-    const v = 0; //sig[64];
+
 
     this.log(`r: ${r.toString('hex')}`);
     this.log(`s: ${s.toString('hex')}`);
-    this.log(`v: ${v}`);
 
-    return { r, s, v };
+    //bitcoinjs-lib
+
+    return { r, s,  };
   }
 
 
@@ -136,7 +188,8 @@ export class CryptoJS {
     }
   }
 
-  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string): { publicKey: string, x: string, y: string } {
+
+  public getPublicKeyFromSignature(signatureBase64: string, messageContent: string, isDMDSigned: boolean): { publicKey: string, x: string, y: string } {
 
     //const signatureBase64 = "IBHr8AT4TZrOQSohdQhZEJmv65ZYiPzHhkOxNaOpl1wKM/2FWpraeT8L9TaphHI1zt5bI3pkqxdWGcUoUw0/lTo=";
     //const address = "";
@@ -144,9 +197,10 @@ export class CryptoJS {
     const signature = Buffer.from(signatureBase64, 'base64');
 
     const parsed = this.decodeSignature(signature);
-    this.log('parsed Signature:', parsed);
+    //this.log('parsed Signature:', parsed);
 
-    const hash = bitcoinMessage.magicHash(messageContent);
+    // todo: add support for DMD specific signing prefix
+    const hash = bitcoinMessage.magicHash(messageContent, CryptoJS.getSignaturePrefix(isDMDSigned));
 
     
     const publicKey = secp256k1.ecdsaRecover(
@@ -161,15 +215,17 @@ export class CryptoJS {
     //it's 02 or 03 prefix, depending if y is ODD or not.
     this.log("publicKey: ", ethers.hexlify(publicKey));
 
-    const x = ethers.hexlify(publicKey.slice(1));
-    this.log("x: " + x);
-
+  
 
     var ec = new EC.ec('secp256k1');
 
     const key = ec.keyFromPublic(publicKey);
-    const y = key.getPublic().getY().toString('hex');
+    //const x = ethers.hexlify(publicKey.slice(1));
+    //this.log("x: " + x);
+    const x = ensure0x(key.getPublic().getX().toString('hex'));
+    const y = ensure0x(key.getPublic().getY().toString('hex'));
 
+    
     this.log("y: " + y);
 
     return { publicKey: ethers.hexlify(publicKey), x, y };
@@ -195,18 +251,17 @@ export class CryptoJS {
     result = prefixBuf(result, addressPrefix);
     //this.log('with prefix: ' + result.toString('hex'));
 
-    const bs58Result = bs58check.encode(result);
+    return bs58check.encode(result);
 
-    return bs58Result;
   }
 
-  public getBitcoinSignedMessageMagic(message: string) {
-    const messagePrefix = '\u0018Bitcoin Signed Message:\n';
+  public getSignedMessage(messagePrefix: string, message: string): Buffer {
+
     const messagePrefixBuffer = Buffer.from(messagePrefix, 'utf8');;
     const messageBuffer = Buffer.from(message, 'utf8');
     const messageVISize = varuint.encodingLength(message.length);
 
-    const buffer = Buffer.allocUnsafe(
+    const buffer = Buffer.alloc(
       messagePrefix.length + messageVISize + message.length
     );
 
@@ -215,4 +270,18 @@ export class CryptoJS {
     messageBuffer.copy(buffer, messagePrefix.length + messageVISize);
     return buffer;
   }
+
+  public static getSignaturePrefix(isDMDSigned: boolean): string {
+    return isDMDSigned ? '\u0018Diamond Signed Message:\n' : '\u0018Bitcoin Signed Message:\n';
+  }
+  
+  public getDMDSignedMessage(message: string): Buffer  {
+    return this.getSignedMessage(CryptoJS.getSignaturePrefix(true), message);
+  }
+
+
+  public getBitcoinSignedMessage(message: string): Buffer  {
+    return this.getSignedMessage(CryptoJS.getSignaturePrefix(false), message);
+  }
+
 }

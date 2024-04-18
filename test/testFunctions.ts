@@ -220,8 +220,8 @@ export class TestFunctions {
     this.log('xy27: ', xy27);
     this.log('xy28: ', xy28);
 
-    const result27 = await this.instance.claimMessageMatchesSignature(message, true, '', xy27.x, xy27.y, 27, rHex, sHex);
-    const result28 = await this.instance.claimMessageMatchesSignature(message, true, '', xy28.x, xy28.y, 28, rHex, sHex);
+    const result27 = await this.instance.claimMessageMatchesSignature(message, true, '', xy27.x, xy27.y, 27, rHex, sHex, false);
+    const result28 = await this.instance.claimMessageMatchesSignature(message, true, '', xy28.x, xy28.y, 28, rHex, sHex, false);
 
     this.log('result27: ', result27);
     this.log('result28: ', result28);
@@ -263,7 +263,7 @@ export class TestFunctions {
     expect(verifyResult).to.be.equal(true);
   }
 
-  private getBitcoinSignedMessageMagic(message: string) {
+  private getBitcoinSignedMessageMagic(message: string): Buffer {
 
     const messagePrefix = '\u0018Bitcoin Signed Message:\n';
     const messagePrefixBuffer = Buffer.from(messagePrefix, 'utf8');;

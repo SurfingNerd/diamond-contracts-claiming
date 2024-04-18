@@ -22,7 +22,8 @@ const config: HardhatUserConfig = {
       },
       allowUnlimitedContractSize: true,
       hardfork: "istanbul",
-      minGasPrice: 0
+      minGasPrice: 0,
+      blockGasLimit: 1199511627775
     },
     alpha2: {
       url: "https://rpc.uniq.diamonds",
@@ -55,7 +56,7 @@ const config: HardhatUserConfig = {
     tests: "./test",
   },
   typechain: {
-    target: "ethers-v5",
+    target: "ethers-v6",
   },
   etherscan: {
     apiKey: "123",

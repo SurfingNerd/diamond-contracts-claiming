@@ -52,8 +52,8 @@ contract ClaimContract {
 
     /// @dev the prefix for the signing message.
     /// A Prefix for the signing message can be used to separate different message between different contracts/networks
-    /// e.g.: "claim to testnet" for indicating that this is only a testnet message.
-    /// using another prefix makes old signatures invalid.
+    /// e.g.: "claim to testnet" for indicating that this is only a testnet claim.
+    /// the prefix is part of the signed message .
     bytes public prefixStr;
 
     event Claim(
@@ -99,7 +99,7 @@ contract ClaimContract {
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         //for simplification we only support a one-shot initialisation.
         require(
-            address(this).balance == 0,
+            address(this).balance == msg.value,
             "The Claim contract is already filled and cannot get filled a second time."
         );
         require(msg.value > 0, "there must be a value to fill up the ClaimContract");
@@ -136,9 +136,10 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) external {
-        //retrieve the oldAddress out of public and private key.
+        //retrieve the oldAddress out of public key.
         bytes20 oldAddress = publicKeyToBitcoinAddress(
             _pubKeyX,
             _pubKeyY,
@@ -159,7 +160,8 @@ contract ClaimContract {
                 _pubKeyY,
                 _v,
                 _r,
-                _s
+                _s,
+                _dmdSignature
             ),
             "Signature does not match for this claiming procedure."
         );
@@ -280,13 +282,25 @@ contract ClaimContract {
     function createClaimMessage(
         address _claimToAddr,
         bool _claimAddrChecksum,
-        bytes memory _postfix
+        bytes memory _postfix,
+        bool _dmdSignature
     ) public view returns (bytes memory) {
         //TODO: pass this as an argument. evaluate in JS before includeAddrChecksum is used or not.
         //now for testing, we assume Yes.
 
         bytes memory addrStr = calculateAddressString(_claimToAddr, _claimAddrChecksum);
 
+        if (_dmdSignature) {
+            return
+                abi.encodePacked(
+                    DIAMOND_SIG_PREFIX_LEN,
+                    DIAMOND_SIG_PREFIX_STR,
+                    uint8(prefixStr.length) + ETH_ADDRESS_HEX_LEN + 2 + uint8(_postfix.length),
+                    prefixStr,
+                    addrStr,
+                    _postfix
+                );
+        }
         return
             abi.encodePacked(
                 BITCOIN_SIG_PREFIX_LEN,
@@ -307,9 +321,10 @@ contract ClaimContract {
     function getHashForClaimMessage(
         address _claimToAddr,
         bool _claimAddrChecksum,
-        bytes memory _postfix
+        bytes memory _postfix,
+        bool _dmdSignature
     ) public view returns (bytes32) {
-        return calcHash256(createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix));
+        return calcHash256(createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature));
     }
 
     /**
@@ -328,13 +343,14 @@ contract ClaimContract {
         bytes memory _postfix,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) public view returns (address) {
         //require(_v >= 27 && _v <= 30, "v invalid");
 
         /* Create and hash the claim message text */
         bytes32 messageHash = calcHash256(
-            createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix)
+            createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature)
         );
 
         return ecrecover(messageHash, _v, _r, _s);
@@ -348,7 +364,8 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        bool _dmdSignature
     ) public view returns (bool) {
         require(_v >= 27 && _v <= 30, "v invalid");
 
@@ -361,7 +378,7 @@ contract ClaimContract {
         //we need to check if X and Y corresponds to R and S.
 
         /* Create and hash the claim message text */
-        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _claimAddrChecksum, _postFix);
+        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _claimAddrChecksum, _postFix, _dmdSignature);
 
         /* Verify the public key */
         return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
@@ -393,31 +410,6 @@ contract ClaimContract {
         } else {
             return (0, 4);
         }
-    }
-
-    function getPublicKeyFromBitcoinSignature(
-        bytes32 hashValue,
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) public pure returns (address) {
-        require(
-            v >= 4,
-            "Bitcoin adds a constant 4 to the v value. this signature seems to be invalid."
-        );
-        //#1: decode bitcoin signature.
-        //# get R, S, V and Hash of Signature.
-        //# do ecrecover on it.
-        //return "todo: implement this magic!";
-
-        return
-            ecrecover(
-                hashValue,
-                v - 4, //bitcoin signature use v that is +4 see reddit comment
-                //https://www.reddit.com/r/ethereum/comments/3gmbkx/how_do_i_verify_a_bitcoinsigned_message_in_an/ctzopoz
-                r,
-                s
-            );
     }
 
     /// @dev returns the essential part of a Bitcoin-style address associated with an ECDSA public key
@@ -460,18 +452,6 @@ contract ClaimContract {
         ) {
             return ripemd160(abi.encodePacked(sha256(abi.encodePacked(hex"0014", publicKey))));
         }
-    }
-
-    /// @dev Convert an uncompressed ECDSA public key into an Ethereum address
-    /// @param _publicKeyX X parameter of uncompressed ECDSA public key
-    /// @param _publicKeyY Y parameter of uncompressed ECDSA public key
-    /// @return Ethereum address generated from the ECDSA public key
-    function publicKeyToEthereumAddress(
-        bytes32 _publicKeyX,
-        bytes32 _publicKeyY
-    ) public pure returns (address) {
-        bytes32 hash = keccak256(abi.encodePacked(_publicKeyX, _publicKeyY));
-        return address(uint160(uint256((hash))));
     }
 
     /**

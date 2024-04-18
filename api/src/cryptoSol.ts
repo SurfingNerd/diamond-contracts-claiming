@@ -1,12 +1,11 @@
 import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
-
 import { ClaimContract } from '../../typechain-types/index';
-
-import { ensure0x, stringToUTF8Hex } from './cryptoHelpers';
+import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 
+
+let base58check = require('base58check'); 
 
 /**
  * Crypto functions used in this project implemented in Soldity.
@@ -17,7 +16,6 @@ export class CryptoSol {
 
   private logDebug: boolean = false;
 
-
   public static async fromContractAddress(contractAddress: string): Promise<CryptoSol> {
 
     const contract: any = await ethers.getContractAt("ClaimContract", contractAddress);
@@ -25,10 +23,55 @@ export class CryptoSol {
   }
 
   public constructor(public instance: ClaimContract) {
-
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
     }
+  }
+
+  public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
+    
+    let postfixHex = stringToUTF8Hex(postfix);
+
+    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
+    this.log('Claim Message: ' , claimMessage);
+
+    let prefixString = await this.prefixString();
+    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, dmdSig);
+
+    const rs = this.cryptoJS.signatureBase64ToRSV(signature);
+
+    let pubKeyX = ensure0x(pubkey.x);
+    let pubKeyY = ensure0x(pubkey.y);
+
+    this.log("pub key x:", pubKeyX);
+    this.log("pub key y:", pubKeyY);
+
+    
+    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
+
+    this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
+    this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
+    this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
+
+    let v = await this.recoverV(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
+
+    let claimOperation = this.instance.claim(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let receipt = await (await claimOperation).wait();
+    // console.log("receipt: ", receipt?.toJSON())
+    return receipt;
+  }
+
+  public async recoverV(dmdV4Address: string, claimAddressChecksum: boolean, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
+
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
+      return "0x1b";
+    }
+
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
+      return "0x1c";
+    }
+
+    throw Error("Could not match signature");
   }
 
   public setLogDebug(value: boolean) {
@@ -36,15 +79,16 @@ export class CryptoSol {
     this.cryptoJS.setLogDebug(value);
   }
 
+  // private async ensurePrefixCache() {
+  //   if (this.prefixCache === '') {
+  //     this.prefixCache = await this.prefixString();
+  //   }
+  // }
+
   private log(message: string, ...params: any[]) {
     if (this.logDebug) {
       console.log(message, ...params);
     }
-  }
-
-
-  public addressToHashToSign(address: string) {
-
   }
 
   /**
@@ -52,11 +96,11 @@ export class CryptoSol {
    * see also: https://bitcoin.stackexchange.com/questions/77324/how-are-bitcoin-signed-messages-generated
    * @param address Ethereum style address, include checksum information.
    */
-  public async addressToClaimMessage(address: string, postfix: string = ''): Promise<string> {
+  public async addressToClaimMessage(address: string, postfix: string = '', dmdSig: boolean = false): Promise<string> {
 
     const postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex);
+    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex, dmdSig);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
@@ -81,7 +125,8 @@ export class CryptoSol {
     pubkeyY: string,
     sigV: string,
     sigR: string,
-    sigS: string):
+    sigS: string,
+    dmd: boolean):
     Promise<boolean> {
     const result =
       await this.instance.claimMessageMatchesSignature(
@@ -92,7 +137,8 @@ export class CryptoSol {
         ensure0x(pubkeyY),
         ensure0x(sigV),
         ensure0x(sigR),
-        ensure0x(sigS));
+        ensure0x(sigS), 
+        dmd);
     this.log('Claim Result: ', result);
     return result;
   }
@@ -103,7 +149,8 @@ export class CryptoSol {
     postfix: string,
     sigV: string,
     sigR: string | Buffer,
-    sigS: string | Buffer)
+    sigS: string | Buffer,
+    dmd: boolean)
     : Promise<string> {
 
     return this.instance.getEthAddressFromSignature(
@@ -112,7 +159,8 @@ export class CryptoSol {
       stringToUTF8Hex(postfix),
       ensure0x(sigV),
       ensure0x(sigR),
-      ensure0x(sigS)
+      ensure0x(sigS),
+      dmd
     );
   }
 
@@ -122,17 +170,17 @@ export class CryptoSol {
    * @param y Y coordinate of the ECDSA public key
    * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
    */
-  async publicKeyToBitcoinAddressEssential(x: BigNumber, y: BigNumber): Promise<string> {
+  async publicKeyToBitcoinAddressEssential(x: bigint, y: bigint): Promise<string> {
     const legacyCompressedEnumValue = 1;
 
     return this.instance.publicKeyToBitcoinAddress(
-      x.toHexString(),
-      y.toHexString(),
+      toHexString(x),
+      toHexString(y),
       legacyCompressedEnumValue
     );
   }
 
-  async publicKeyToBitcoinAddress(x: BigNumber, y: BigNumber, addressPrefix: string) {
+  async publicKeyToBitcoinAddress(x: bigint, y: bigint, addressPrefix: string) {
     const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
     return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
   }
@@ -156,8 +204,12 @@ export class CryptoSol {
     const fromAccount = signers[0];
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
 
-    await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value });
+    return (await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
   }
+
+  // public async claim(dmdv3Address: string, payoutAddress: string, signature: string ) {
+  //   ensurePrefixCache()
+  // }
 
   public async getBalance(dmdV3Address: string) {
 
@@ -166,7 +218,7 @@ export class CryptoSol {
   }
 
   public async getContractBalance() {
-    const address = this.instance.address;
+    const address = await this.instance.getAddress();
     // get the balance of ths address.
 
     return await ethers.provider.getBalance(address);

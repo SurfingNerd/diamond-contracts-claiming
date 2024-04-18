@@ -1,12 +1,16 @@
 {
   "name": "diamond-contracts-claiming",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "description": "claiming contracts",
   "main": "index.js",
+  "coverage": "export SOLIDITY_COVERAGE=true && npx hardhat coverage",
   "scripts": {
     "compile": "npx hardhat compile",
     "test": "npx hardhat test --network hardhat",
-    "test-deploy": "ts-node scripts/deploy-raw.ts"
+    "coverage": "export SOLIDITY_COVERAGE=true && npx hardhat coverage",
+    "test-deploy": "ts-node scripts/deploy-raw.ts",
+    "test-deploy-and-fill": "ts-node scripts/test-fill.ts",
+    "test-claim": "ts-node scripts/test-claim.ts"
   },
   "repository": {
     "type": "git",
@@ -21,6 +25,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@typechain/ethers-v6": "^0.5.1",
     "@types/elliptic": "^6.4.18",
     "base58check": "^2.0.0",
     "bitcoinjs-lib": "^6.1.5",

@@ -46,7 +46,7 @@ async function main() {
     const dillute3 = now + 5 * 12 * month * speedUpMultiplier;
 
     const contractFactory = await ethers.getContractFactory("ClaimContract");
-    const claimContract: ClaimContract = (await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, "0x", dillute1, dillute2, dillute3)) as ClaimContract;
+    const claimContract  = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, "0x", dillute1, dillute2, dillute3);
 
 
     let currentPot = 3768982;
