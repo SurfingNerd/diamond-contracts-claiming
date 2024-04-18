@@ -46,24 +46,32 @@ export class CryptoSol {
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
 
-    this.log("v:", rs.v);
     
-
     let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
 
     this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
     this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
-    let v = rs.v - 4;
-    if (!await this.instance.claimMessageMatchesSignature(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig)) { 
-      throw Error('Signature does not match');
+    let v = await this.recoverV(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
+
+    let claimOperation = this.instance.claim(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let receipt = await (await claimOperation).wait();
+    // console.log("receipt: ", receipt?.toJSON())
+    return receipt;
+  }
+
+  public async recoverV(dmdV4Address: string, claimAddressChecksum: boolean, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
+
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
+      return "0x1b";
     }
 
-    let claimOperation = this.instance.claim(dmdV4Address, true, "0x", pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
-    let receipt = await (await claimOperation).wait();
-    console.log("receipt: ", receipt?.toJSON())
-    return receipt;
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
+      return "0x1c";
+    }
+
+    throw Error("Could not match signature");
   }
 
   public setLogDebug(value: boolean) {

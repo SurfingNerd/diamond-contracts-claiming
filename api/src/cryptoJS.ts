@@ -118,7 +118,7 @@ export class CryptoJS {
     return buffer;
   }
 
-  public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer, v: number } {
+  public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer } {
 
     
 
@@ -157,16 +157,13 @@ export class CryptoJS {
     const r = sig.subarray(rStart, rStart + sizeOfRComponent);
     const s = sig.subarray(sStart, 65);
 
-    
-    const v = sig[0];
 
     this.log(`r: ${r.toString('hex')}`);
     this.log(`s: ${s.toString('hex')}`);
-    this.log(`v: ${v}`);
 
     //bitcoinjs-lib
 
-    return { r, s, v };
+    return { r, s,  };
   }
 
 
