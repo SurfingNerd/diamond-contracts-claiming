@@ -3,17 +3,12 @@ import EC from 'elliptic'
 import BN from 'bn.js';
 import { ensure0x, hexToBuf, prefixBuf, remove0x } from './cryptoHelpers';
 import varuint from 'varuint-bitcoin';
-
-//import { toBase58Check, fromBase58Check } from 'bitcoinjs-lib/types/address';
-//var bs58check = require('bs58check');
-
 import bitcoinMessage from 'bitcoinjs-message';
 import * as bitcoin from 'bitcoinjs-lib';
-
-// const secp256k1 = require('secp256k1')
-
 import * as secp256k1 from "secp256k1";
 import { ethers } from 'hardhat';
+
+let base58check = require('base58check'); 
 
 const SEGWIT_TYPES = {
   P2WPKH: 'p2wpkh',
@@ -21,30 +16,30 @@ const SEGWIT_TYPES = {
 }
 
 
-const metadata = {
-  diamond: {
-  messagePrefix: '\x18Diamond Signed Message:\n',
-  bip32: {
-    public: 0x0488B21E,
-    private: 0x0488ADE4,
-  },
-  pubKeyHash: 0x5a,
-  scriptHash: 0x08,
-  wif: 0xda,
-  },
+// const metadata = {
+//   diamond: {
+//   messagePrefix: '\x18Diamond Signed Message:\n',
+//   bip32: {
+//     public: 0x0488B21E,
+//     private: 0x0488ADE4,
+//   },
+//   pubKeyHash: 0x5a,
+//   scriptHash: 0x08,
+//   wif: 0xda,
+//   },
 
-  bitcoin: {
-    messagePrefix:"\x18Bitcoin Signed Message:\n",
-    bech32:"bc",
-    bip32:
-    {
-      public:76067358,
-      private:76066276
-    },
-    pubKeyHash:0,
-    scriptHash:5,
-    wif:128}
-}
+//   bitcoin: {
+//     messagePrefix:"\x18Bitcoin Signed Message:\n",
+//     bech32:"bc",
+//     bip32:
+//     {
+//       public:76067358,
+//       private:76066276
+//     },
+//     pubKeyHash:0,
+//     scriptHash:5,
+//     wif:128}
+// }
 
 /**
  * Crypto functions used in this project implemented in JS.
@@ -113,6 +108,7 @@ export class CryptoJS {
     this.log('address:', address);
     const decoded = bs58check.decode(address);
 
+    
     // Assume first byte is version number
     let buffer = Buffer.from(decoded.slice(1));
     return buffer;
@@ -120,28 +116,15 @@ export class CryptoJS {
 
   public signatureBase64ToRSV(signatureBase64: string): { r: Buffer, s: Buffer } {
 
-    
-
-    //var ec = new EC.ec('secp256k1');
-
-    //const input = new EC. SignatureInput();
-
-    // 30 <total length> 02 <length of r> <r> 02 <length of s> <s>
-    
-
     const sig = Buffer.from(signatureBase64, 'base64');
 
     this.log('sigBuffer:');
     this.log(sig.toString('hex'));
 
-    //thesis:
-    // 20 is a header, and v is not included in the signature ?
     const sizeOfRComponent = sig[0];
     if (sizeOfRComponent !== 32) { 
       this.log(`invalid size of R in signature: ${sizeOfRComponent}:`, signatureBase64);
     }
-
-    
 
     const rStart = 1; // r Start is always one (1).
     const sStart = 1 + sizeOfRComponent;
@@ -254,6 +237,21 @@ export class CryptoJS {
     return bs58check.encode(result);
 
   }
+
+  
+
+  /// creates a DMD Diamond Address from a RIPEMD-160 hash
+  public ripeToDMDAddress(ripe160Hash: Buffer): string {
+  // Prepend the version byte
+
+    let buff = prefixBuf(ripe160Hash, "5a");
+    //this.log('with prefix: ' + result.toString('hex'));
+
+    return bs58check.encode(buff);
+  
+  }
+
+
 
   public getSignedMessage(messagePrefix: string, message: string): Buffer {
 
