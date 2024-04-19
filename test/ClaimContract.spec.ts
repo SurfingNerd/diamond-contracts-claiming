@@ -552,6 +552,16 @@ describe('ClaimContract', () => {
             it("rejecting double add balances for defined DMD address", async () => {
                 await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.rejectedWith("There is already a balance defined for this old address");
             });
+
+            it("DMD address building from ripe.", async () => {
+                let balances = getTestBalances();
+
+                for (let balance of balances) {
+                    const ripeResult = cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address);
+                    const dmdAddressFromRipe = cryptoJS.ripeToDMDAddress(ripeResult);
+                    expect(dmdAddressFromRipe).to.equal(balance.dmdv3Address);
+                }
+            });
         });
 
 
