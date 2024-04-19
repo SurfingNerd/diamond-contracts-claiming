@@ -22,6 +22,8 @@ export class CryptoSol {
     return new CryptoSol(contract);
   }
 
+  /// Creates an instance if you already have a ClaimContract instance.
+  /// use static method fromContractAddress() for creating an instance from a contract address.
   public constructor(public instance: ClaimContract) {
     if (instance === undefined || instance === null) {
       throw Error("Claim contract must be defined!!");
@@ -194,8 +196,6 @@ export class CryptoSol {
     const bytes = await this.instance.prefixStr();
     const buffer = hexToBuf(bytes);
     return new TextDecoder("utf-8").decode(buffer);
-
-    //return stringToUTF8Hex
   }
 
   public async addBalance(dmdV3Address: string, value: string) {
