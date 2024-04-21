@@ -24,17 +24,22 @@ export class CryptoSol {
 
   /// Creates an instance if you already have a ClaimContract instance.
   /// use static method fromContractAddress() for creating an instance from a contract address.
-  public constructor(public instance: ClaimContract) {
-    if (instance === undefined || instance === null) {
+  public constructor(public contract: ClaimContract) {
+    if (contract === undefined || contract === null) {
       throw Error("Claim contract must be defined!!");
     }
   }
 
-  public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
+  /// claims the DMDv3 address with the given signature.
+  /// @param dmdV4Address The DMDv4 address to claim.
+  /// @param signature The signature of the claim, made with a DMDv3 wallet.
+  /// @param postfix optional postfix to add to the claim message.
+  /// @param dmdSig true if the signature is made with a DMD wallet, false if it is made with a Bitcoin wallet.
+  public async claim(dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
     
     let postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
+    const claimMessage = await this.contract.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
     this.log('Claim Message: ' , claimMessage);
 
     let prefixString = await this.prefixString();
@@ -47,29 +52,29 @@ export class CryptoSol {
 
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
-
     
-    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
+    let dmdV3AddressFromSignaturesHex = await this.contract.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
 
     this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
-    this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
     let v = await this.recoverV(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
 
-    let claimOperation = this.instance.claim(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let claimOperation = this.contract.claim(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
     let receipt = await (await claimOperation).wait();
     // console.log("receipt: ", receipt?.toJSON())
     return receipt;
   }
 
+  /// Recovers the V value of the signature by probing the 2 possible values.
+  /// throws an error if the signature does not match.
   public async recoverV(dmdV4Address: string, claimAddressChecksum: boolean, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
+    if (await this.contract.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
       return "0x1b";
     }
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
+    if (await this.contract.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
       return "0x1c";
     }
 
@@ -102,22 +107,24 @@ export class CryptoSol {
 
     const postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex, dmdSig);
+    const claimMessage = await this.contract.createClaimMessage(address, true, postfixHex, dmdSig);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
   }
 
+  /// Returns the Sha256 hash of the given message,
+  /// using the contract to do so.
   public async messageToHash(messageString: string) {
 
     const buffer = Buffer.from(messageString, 'utf-8');
-
-    const hash = await this.instance.calcHash256(buffer.toString('hex'), {});
+    const hash = await this.contract.calcHash256(buffer.toString('hex'), {});
     this.log('messageToHash');
     this.log(hash);
     return hash;
   }
 
+  /// test if a claim message matches a signature.
   public async claimMessageMatchesSignature(
     claimToAddress: string,
     addressContainsChecksum: boolean,
@@ -130,7 +137,7 @@ export class CryptoSol {
     dmd: boolean):
     Promise<boolean> {
     const result =
-      await this.instance.claimMessageMatchesSignature(
+      await this.contract.claimMessageMatchesSignature(
         claimToAddress,
         addressContainsChecksum,
         stringToUTF8Hex(postfix),
@@ -144,6 +151,7 @@ export class CryptoSol {
     return result;
   }
 
+  /// Returns the Ethereum address of the given signature.
   public async getEthAddressFromSignature(
     claimToAddress: string,
     addressContainsChecksum: boolean,
@@ -154,7 +162,7 @@ export class CryptoSol {
     dmd: boolean)
     : Promise<string> {
 
-    return this.instance.getEthAddressFromSignature(
+    return this.contract.getEthAddressFromSignature(
       claimToAddress,
       addressContainsChecksum,
       stringToUTF8Hex(postfix),
@@ -174,7 +182,7 @@ export class CryptoSol {
   async publicKeyToBitcoinAddressEssential(x: bigint, y: bigint): Promise<string> {
     const legacyCompressedEnumValue = 1;
 
-    return this.instance.publicKeyToBitcoinAddress(
+    return this.contract.publicKeyToBitcoinAddress(
       toHexString(x),
       toHexString(y),
       legacyCompressedEnumValue
@@ -188,13 +196,13 @@ export class CryptoSol {
 
   /// return the ethereum pseudo address of the deployed contract as UTF-8.
   public async pubKeyToEthAddress(x: string, y: string) {
-    return this.instance.pubKeyToEthAddress(x, y);
+    return this.contract.pubKeyToEthAddress(x, y);
   }
 
    /// return the prefix string of the deployed contract as UTF-8.
   public async prefixString() {
 
-    const bytes = await this.instance.prefixStr();
+    const bytes = await this.contract.prefixStr();
     const buffer = hexToBuf(bytes);
     return new TextDecoder("utf-8").decode(buffer);
   }
@@ -206,7 +214,7 @@ export class CryptoSol {
     const fromAccount = signers[0];
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
 
-    return (await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
+    return (await this.contract.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
   }
 
 
@@ -214,12 +222,12 @@ export class CryptoSol {
   public async getBalance(dmdV3Address: string) : Promise<bigint> {
 
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-    return this.instance.balances(ensure0x(ripe));
+    return this.contract.balances(ensure0x(ripe));
   }
 
   /// Returns the total balance of the claiming pot.
   public async getContractBalance() : Promise<bigint> {
-    const address = await this.instance.getAddress();
+    const address = await this.contract.getAddress();
     // get the balance of ths address.
 
     return ethers.provider.getBalance(address);
