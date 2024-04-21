@@ -118,7 +118,6 @@ export class CryptoSol {
     return hash;
   }
 
-
   public async claimMessageMatchesSignature(
     claimToAddress: string,
     addressContainsChecksum: boolean,
@@ -187,10 +186,12 @@ export class CryptoSol {
     return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
   }
 
+  /// return the ethereum pseudo address of the deployed contract as UTF-8.
   public async pubKeyToEthAddress(x: string, y: string) {
     return this.instance.pubKeyToEthAddress(x, y);
   }
 
+   /// return the prefix string of the deployed contract as UTF-8.
   public async prefixString() {
 
     const bytes = await this.instance.prefixStr();
@@ -198,6 +199,7 @@ export class CryptoSol {
     return new TextDecoder("utf-8").decode(buffer);
   }
 
+  /// adds additional balance to the contract.
   public async addBalance(dmdV3Address: string, value: string) {
 
     const signers = await ethers.getSigners();
@@ -207,20 +209,19 @@ export class CryptoSol {
     return (await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
   }
 
-  // public async claim(dmdv3Address: string, payoutAddress: string, signature: string ) {
-  //   ensurePrefixCache()
-  // }
 
-  public async getBalance(dmdV3Address: string) {
+  /// Returns the balance of the given DMD V3 address.
+  public async getBalance(dmdV3Address: string) : Promise<bigint> {
 
     const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-    return await this.instance.balances(ensure0x(ripe));
+    return this.instance.balances(ensure0x(ripe));
   }
 
-  public async getContractBalance() {
+  /// Returns the total balance of the claiming pot.
+  public async getContractBalance() : Promise<bigint> {
     const address = await this.instance.getAddress();
     // get the balance of ths address.
 
-    return await ethers.provider.getBalance(address);
+    return ethers.provider.getBalance(address);
   }
 }
