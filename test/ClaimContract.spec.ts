@@ -15,7 +15,7 @@ import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
 import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
-import { CryptoSol } from "../api/src/cryptoSol";
+import { DMDClaimingAPI } from "../api/src/cryptoSol";
 
 
 const ECPair = ECPairFactory(ecc);
@@ -378,7 +378,7 @@ describe('ClaimContract', () => {
             const caller = signers[0];
             const balances = testSet;
 
-            let cryptoSol = new CryptoSol(claimContract);
+            let cryptoSol = new DMDClaimingAPI(claimContract);
 
             for (const balance of balances.balances) {
                 const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));

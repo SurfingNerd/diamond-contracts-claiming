@@ -10,16 +10,16 @@ let base58check = require('base58check');
 /**
  * Crypto functions used in this project implemented in Soldity.
  */
-export class CryptoSol {
+export class DMDClaimingAPI {
 
   public cryptoJS = new CryptoJS();
 
   private logDebug: boolean = false;
 
-  public static async fromContractAddress(contractAddress: string): Promise<CryptoSol> {
+  public static async fromContractAddress(contractAddress: string): Promise<DMDClaimingAPI> {
 
     const contract: any = await ethers.getContractAt("ClaimContract", contractAddress);
-    return new CryptoSol(contract);
+    return new DMDClaimingAPI(contract);
   }
 
   /// Creates an instance if you already have a ClaimContract instance.
