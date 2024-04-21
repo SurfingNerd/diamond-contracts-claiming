@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { ClaimContract } from '../../typechain-types/index';
 import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
-import { CryptoJS } from './cryptoJS';
+import { DMDClaimingHelpers } from './DMDClaimingHelpers';
 import { hexToBuf } from './cryptoHelpers';
 
 
@@ -12,7 +12,7 @@ let base58check = require('base58check');
  */
 export class DMDClaimingAPI {
 
-  public cryptoJS = new CryptoJS();
+  public cryptoJS = new DMDClaimingHelpers();
 
   private logDebug: boolean = false;
 

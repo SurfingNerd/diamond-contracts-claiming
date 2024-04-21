@@ -1,4 +1,4 @@
-import { DMDClaimingAPI } from "../api/src/cryptoSol";
+import { DMDClaimingAPI } from "../api/src/DMDClaimingAPI";
 import { ClaimContract, ClaimContract__factory } from "../typechain-types";
 import hre from "hardhat";
 

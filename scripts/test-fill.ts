@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { DMDClaimingAPI } from "../api/src/cryptoSol";
+import { DMDClaimingAPI } from "../api/src/DMDClaimingAPI";
 import { ClaimContract, ClaimContract__factory } from "../typechain-types";
 import { stringToUTF8Hex } from "../api/src/cryptoHelpers";
 
