@@ -130,7 +130,6 @@ contract ClaimContract {
 
     function claim(
         address payable _targetAdress,
-        bool _claimAddrChecksum,
         bytes memory _postfix,
         bytes32 _pubKeyX,
         bytes32 _pubKeyY,
@@ -154,7 +153,6 @@ contract ClaimContract {
         require(
             claimMessageMatchesSignature(
                 _targetAdress,
-                _claimAddrChecksum,
                 _postfix,
                 _pubKeyX,
                 _pubKeyY,
@@ -276,19 +274,17 @@ contract ClaimContract {
     /**
      * @dev returns the hash for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
-     * @param _claimAddrChecksum bool target address was signed using the Ethereum checksum (EIP-55)
      * @return bytes32 Bitcoin hash of the claim message.
      */
     function createClaimMessage(
         address _claimToAddr,
-        bool _claimAddrChecksum,
         bytes memory _postfix,
         bool _dmdSignature
     ) public view returns (bytes memory) {
         //TODO: pass this as an argument. evaluate in JS before includeAddrChecksum is used or not.
         //now for testing, we assume Yes.
 
-        bytes memory addrStr = calculateAddressString(_claimToAddr, _claimAddrChecksum);
+        bytes memory addrStr = calculateAddressString(_claimToAddr);
 
         if (_dmdSignature) {
             return
@@ -315,22 +311,19 @@ contract ClaimContract {
     /**
      * @dev returns the hash for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
-     * @param _claimAddrChecksum bool target address was signed using the Ethereum checksum (EIP-55)
      * @return bytes32 DMD style hash of the claim message.
      */
     function getHashForClaimMessage(
         address _claimToAddr,
-        bool _claimAddrChecksum,
         bytes memory _postfix,
         bool _dmdSignature
     ) public view returns (bytes32) {
-        return calcHash256(createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature));
+        return calcHash256(createClaimMessage(_claimToAddr, _postfix, _dmdSignature));
     }
 
     /**
      * @dev returns the ethereum pseude address of a DMD signed message.
      * @param _claimToAddr address target address for the claim.
-     * @param _claimAddrChecksum bool target address was signed using the Ethereum checksum (EIP-55)
      * @param _v uint8 v component of the signature.
      * @param _r bytes32 r component of the signature.
      * @param _s bytes32 s component of the signautre.
@@ -339,7 +332,6 @@ contract ClaimContract {
      */
     function getEthAddressFromSignature(
         address _claimToAddr,
-        bool _claimAddrChecksum,
         bytes memory _postfix,
         uint8 _v,
         bytes32 _r,
@@ -350,7 +342,7 @@ contract ClaimContract {
 
         /* Create and hash the claim message text */
         bytes32 messageHash = calcHash256(
-            createClaimMessage(_claimToAddr, _claimAddrChecksum, _postfix, _dmdSignature)
+            createClaimMessage(_claimToAddr, _postfix, _dmdSignature)
         );
 
         return ecrecover(messageHash, _v, _r, _s);
@@ -358,7 +350,6 @@ contract ClaimContract {
 
     function claimMessageMatchesSignature(
         address _claimToAddr,
-        bool _claimAddrChecksum,
         bytes memory _postFix,
         bytes32 _pubKeyX,
         bytes32 _pubKeyY,
@@ -378,7 +369,7 @@ contract ClaimContract {
         //we need to check if X and Y corresponds to R and S.
 
         /* Create and hash the claim message text */
-        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _claimAddrChecksum, _postFix, _dmdSignature);
+        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _postFix, _dmdSignature);
 
         /* Verify the public key */
         return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
@@ -478,29 +469,24 @@ contract ClaimContract {
     /**
      * @dev calculates the address string representation of the signed address.
      * @param _addr address
-     * @param _includeAddrChecksum bool. should the addressChecksum be used for this caluclation.
      * @return addrStr ethereum address(24 byte)
      */
     function calculateAddressString(
-        address _addr,
-        bool _includeAddrChecksum
+        address _addr
     ) public pure returns (bytes memory addrStr) {
         bytes memory tmp = new bytes(ETH_ADDRESS_HEX_LEN);
         _hexStringFromData(tmp, bytes32(bytes20(_addr)), 0, ETH_ADDRESS_BYTE_LEN);
 
-        if (_includeAddrChecksum) {
-            bytes32 addrStrHash = keccak256(tmp);
+        bytes32 addrStrHash = keccak256(tmp);
+        uint256 offset = 0;
 
-            uint256 offset = 0;
+        for (uint256 i = 0; i < ETH_ADDRESS_BYTE_LEN; i++) {
+            uint8 b = uint8(addrStrHash[i]);
 
-            for (uint256 i = 0; i < ETH_ADDRESS_BYTE_LEN; i++) {
-                uint8 b = uint8(addrStrHash[i]);
-
-                _addressStringChecksumChar(tmp, offset++, b >> 4);
-                _addressStringChecksumChar(tmp, offset++, b & 0x0f);
-            }
+            _addressStringChecksumChar(tmp, offset++, b >> 4);
+            _addressStringChecksumChar(tmp, offset++, b & 0x0f);
         }
-
+    
         // the correct checksum is now in the tmp variable.
         // we extend this by the Ethereum usual prefix 0x
 
