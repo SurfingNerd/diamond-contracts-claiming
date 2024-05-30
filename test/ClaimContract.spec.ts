@@ -75,7 +75,6 @@ describe('ClaimContract', () => {
         const txResult1 =
             await claimContract.claimMessageMatchesSignature(
                 claimToAddress,
-                true,
                 stringToUTF8Hex(postfix),
                 ensure0x(key.x),
                 ensure0x(key.y),
@@ -88,7 +87,6 @@ describe('ClaimContract', () => {
         const txResult2 =
             await claimContract.claimMessageMatchesSignature(
                 claimToAddress,
-                true,
                 stringToUTF8Hex(postfix),
                 ensure0x(key.x),
                 ensure0x(key.y),
@@ -160,7 +158,7 @@ describe('ClaimContract', () => {
             const address = '0xfec7b00dc0192319dda0c777a9f04e47dc49bd18';
             const addressWithChecksum = '0xfEc7B00DC0192319DdA0c777A9F04E47Dc49bD18';
 
-            const calcAddressResult = await claimContract.calculateAddressString(address, true);
+            const calcAddressResult = await claimContract.calculateAddressString(address);
 
             const buffer = Buffer.from(remove0x(calcAddressResult), 'hex');
             const calcResult = buffer.toString('utf8');
@@ -175,7 +173,7 @@ describe('ClaimContract', () => {
             const resultJS = ensure0x(cryptoJS.getBitcoinSignedMessage(address).toString('hex'));
 
             const postfixHex = stringToUTF8Hex('');
-            const result = await claimContract.createClaimMessage(address, true, postfixHex, false);
+            const result = await claimContract.createClaimMessage(address, postfixHex, false);
 
             expect(result).to.be.equal(resultJS);
         });
@@ -189,7 +187,7 @@ describe('ClaimContract', () => {
             const resultJS = ensure0x(cryptoJS.getDMDSignedMessage(prefix + address).toString('hex'));
 
             const postfixHex = stringToUTF8Hex('');
-            const result = await claimContract.createClaimMessage(address, true, postfixHex, true);
+            const result = await claimContract.createClaimMessage(address, postfixHex, true);
 
             expect(result).to.be.equal(resultJS);
         });
@@ -269,7 +267,7 @@ describe('ClaimContract', () => {
             const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
             const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
 
-            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, true, "0x", false);
+            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, "0x", false);
             expect(hash).to.be.equal(hashFromSolidity);
         });
 
@@ -344,7 +342,6 @@ describe('ClaimContract', () => {
 
                 const recoveredETHAddress = await claimContract.getEthAddressFromSignature(
                     message,
-                    true,
                     stringToUTF8Hex(''),
                     '0x1b',
                     ensure0x(rs.r),
@@ -353,7 +350,6 @@ describe('ClaimContract', () => {
                 );
                 const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
                     message,
-                    true,
                     stringToUTF8Hex(''),
                     '0x1c',
                     ensure0x(rs.r),
