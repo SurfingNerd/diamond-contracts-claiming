@@ -34,7 +34,7 @@ export class CryptoSol {
     
     let postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, true, postfixHex, dmdSig);
+    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, postfixHex, dmdSig);
     this.log('Claim Message: ' , claimMessage);
 
     let prefixString = await this.prefixString();
@@ -55,21 +55,21 @@ export class CryptoSol {
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
     this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
-    let v = await this.recoverV(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
+    let v = await this.recoverV(dmdV4Address, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
 
-    let claimOperation = this.instance.claim(dmdV4Address, true, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let claimOperation = this.instance.claim(dmdV4Address, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
     let receipt = await (await claimOperation).wait();
     // console.log("receipt: ", receipt?.toJSON())
     return receipt;
   }
 
-  public async recoverV(dmdV4Address: string, claimAddressChecksum: boolean, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
+  public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
       return "0x1b";
     }
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, claimAddressChecksum, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
       return "0x1c";
     }
 
@@ -102,7 +102,7 @@ export class CryptoSol {
 
     const postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(address, true, postfixHex, dmdSig);
+    const claimMessage = await this.instance.createClaimMessage(address, postfixHex, dmdSig);
     this.log('Claim Message:');
     this.log(claimMessage);
     return claimMessage;
@@ -121,7 +121,6 @@ export class CryptoSol {
 
   public async claimMessageMatchesSignature(
     claimToAddress: string,
-    addressContainsChecksum: boolean,
     postfix: string,
     pubkeyX: string,
     pubkeyY: string,
@@ -133,7 +132,6 @@ export class CryptoSol {
     const result =
       await this.instance.claimMessageMatchesSignature(
         claimToAddress,
-        addressContainsChecksum,
         stringToUTF8Hex(postfix),
         ensure0x(pubkeyX),
         ensure0x(pubkeyY),
@@ -157,7 +155,6 @@ export class CryptoSol {
 
     return this.instance.getEthAddressFromSignature(
       claimToAddress,
-      addressContainsChecksum,
       stringToUTF8Hex(postfix),
       ensure0x(sigV),
       ensure0x(sigR),
