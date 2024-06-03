@@ -2,10 +2,7 @@ pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
     enum AddressType {
-        LegacyUncompressed,
-        LegacyCompressed,
-        SegwitUncompressed,
-        SegwitCompressed
+        LegacyCompressed
     }
 
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
@@ -141,8 +138,7 @@ contract ClaimContract {
         //retrieve the oldAddress out of public key.
         bytes20 oldAddress = publicKeyToBitcoinAddress(
             _pubKeyX,
-            _pubKeyY,
-            AddressType.LegacyCompressed
+            _pubKeyY
         );
 
         //if already claimed, it just returns.
@@ -406,43 +402,18 @@ contract ClaimContract {
     /// @dev returns the essential part of a Bitcoin-style address associated with an ECDSA public key
     /// @param _publicKeyX X coordinate of the ECDSA public key
     /// @param _publicKeyY Y coordinate of the ECDSA public key
-    /// @param _addressType Whether DMD is Legacy or Segwit address and if it was compressed
     /// @return rawBtcAddress Raw parts of the Bitcoin Style address
     function publicKeyToBitcoinAddress(
         bytes32 _publicKeyX,
-        bytes32 _publicKeyY,
-        AddressType _addressType
+        bytes32 _publicKeyY
     ) public pure returns (bytes20 rawBtcAddress) {
-        bytes20 publicKey;
-        uint8 initialByte;
-        if (
-            _addressType == AddressType.LegacyCompressed ||
-            _addressType == AddressType.SegwitCompressed
-        ) {
-            //Hash the compressed format
-            initialByte = (uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03;
-            publicKey = ripemd160(
-                abi.encodePacked(sha256(abi.encodePacked(initialByte, _publicKeyX)))
-            );
-        } else {
-            //Hash the uncompressed format
-            initialByte = 0x04;
-            publicKey = ripemd160(
-                abi.encodePacked(sha256(abi.encodePacked(initialByte, _publicKeyX, _publicKeyY)))
-            );
-        }
 
-        if (
-            _addressType == AddressType.LegacyUncompressed ||
-            _addressType == AddressType.LegacyCompressed
-        ) {
-            return publicKey;
-        } else if (
-            _addressType == AddressType.SegwitUncompressed ||
-            _addressType == AddressType.SegwitCompressed
-        ) {
-            return ripemd160(abi.encodePacked(sha256(abi.encodePacked(hex"0014", publicKey))));
-        }
+        uint8 initialByte;
+        //Hash the compressed format
+        initialByte = (uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03;
+        return ripemd160(
+            abi.encodePacked(sha256(abi.encodePacked(initialByte, _publicKeyX)))
+        );
     }
 
     /**

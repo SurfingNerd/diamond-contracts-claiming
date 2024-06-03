@@ -49,7 +49,7 @@ export class CryptoSol {
     this.log("pub key y:", pubKeyY);
 
     
-    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY, 1);
+    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY);
 
     this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
