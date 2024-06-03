@@ -243,8 +243,7 @@ describe('ClaimContract', () => {
 
             const essentialPart = await claimContract.publicKeyToBitcoinAddress(
                 ensure0x(x.toString('hex')),
-                ensure0x(y.toString('hex')),
-                1
+                ensure0x(y.toString('hex'))
             );
 
             const bs58Result = cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
