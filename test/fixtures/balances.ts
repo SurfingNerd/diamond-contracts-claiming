@@ -38,10 +38,7 @@ export function getTestBalances_DMD_cli_same_address() : TestBalances {
         messagePrefix: "",
         balances: balances
     }
-
 }
-
-
 
 
 // those balances have been created with a diamond-cli tool.
@@ -57,8 +54,6 @@ export function getTestBalances_DMD_cli(): TestBalances {
         { dmdv3Address: 'dYG17dp3fpUQiPga6e3eXJzMH38vmHPJsW', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'ICjQEOxghhtJVNij83YP8ZcIJt5Yg6HOqbrDCWGug9kID+dasHNlSwaERFML6ersVhELwv+4uj4Z5qCw4BanekE=' },
         { dmdv3Address: 'db8WgnT3gE1SipJVYYoEkXAJXxnbwa6nUJ', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IFH/hTeclsuFYZi+R5MMDbU0fvNuIj2mtNLLKgrdvRzqBbtPw8EMKgYtv2GiPig+xu867gDRAHlVYWZnH7/bP6g=' },
         { dmdv3Address: 'dS9x552NRfEyVe26hMipbJjJtmN5cevsYY', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IBfEmCLHIbNOqmvAf8RQjzWfWhYvH9m3k0JqHOLzu8WFJQi7kHMHqh3U3DpqQH6FWlhgAFFm5vW8xGPKk0adza8=' },  
-        
-        
         { dmdv3Address: 'dHibMHA3YtjnfjGiPn2gbVFz4hZ6un1zoJ', dmdv4Address: '0xEb44B81852A2705701A59D454d1a33DA7a71E169', value: '10000', signature: 'IEeNNP3WYEFg91TM+A+I1tarLhDyV6Hpz494ny8KFIM4Tt2fhzjcEjxPQhKGaEVeZqO6/5qYTZGw9DK9tKzcO7c=' },  
                 
     ];
@@ -73,7 +68,7 @@ export function getTestBalances_DMD_cli(): TestBalances {
 
 
 // those balances have been created with a diamond-cli tool,
-// but they create a invalid signature size, like having a 33 or 31 byte long R or S value, what cannot be processed in the ethereum VM without further tricks.
+// but they create a invalid signature size, like having a 33 or 31 byte long R or S value, what cannot be processed without relying on an ineffective EVM implementation that adds additional third party code.
 // Those are `valid` signatures, but they cannot be processed.
 // more INfo: https://github.com/DMDcoin/diamond-contracts-claiming/issues/21
 export function getTestBalances_DMD_cli_invalid_signature_size(): TestBalances {
