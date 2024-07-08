@@ -12,9 +12,9 @@ import * as ecc from 'tiny-secp256k1';
 
 import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
-import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex, toHexString } from "../api/src/cryptoHelpers";
+import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_BTC, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
+import { TestBalances, getTestBalances, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 
 
@@ -29,9 +29,6 @@ function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3:
 
 }
 
-
-
-
 describe('ClaimContract', () => {
     let signers: SignerWithAddress[];
 
@@ -43,13 +40,11 @@ describe('ClaimContract', () => {
     async function deployClaiming(claimBeneficorAddress: string, beneficorDAOAddress: string, prefix: string) {
         const contractFactory = await ethers.getContractFactory("ClaimContract");
         let dilluteTimestamps = getDilluteTimestamps();
-
         let prefixHex = stringToUTF8Hex(prefix);
 
         const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefixHex, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
 
         await claimContract.waitForDeployment();
-
         return claimContract;
     }
 
@@ -63,13 +58,15 @@ describe('ClaimContract', () => {
         return { claimContract }
     }
 
-    async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, dmdSignature: boolean, postfix: string = '') {
+    async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
+        
+        
         const prefixBytes = await claimContract.prefixStr();
         const prefixBuffer = hexToBuf(prefixBytes);
 
         const prefixString = new TextDecoder("utf-8").decode(prefixBuffer);
 
-        const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, prefixString + claimToAddress + postfix, false);
+        const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, prefixString + claimToAddress + postfix, true);
         const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
 
         const txResult1 =
@@ -80,8 +77,7 @@ describe('ClaimContract', () => {
                 ensure0x(key.y),
                 ensure0x('0x1b'),
                 ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex')),
-                dmdSignature
+                ensure0x(rs.s.toString('hex'))
             );
 
         const txResult2 =
@@ -92,8 +88,7 @@ describe('ClaimContract', () => {
                 ensure0x(key.y),
                 ensure0x('0x1c'),
                 ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex')),
-                dmdSignature
+                ensure0x(rs.s.toString('hex'))
             );
 
         expect(txResult1 || txResult2).to.be.equal(true, "Claim message did not match the signature");
@@ -170,10 +165,10 @@ describe('ClaimContract', () => {
             const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
             const address = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
-            const resultJS = ensure0x(cryptoJS.getBitcoinSignedMessage(address).toString('hex'));
+            const resultJS = ensure0x(cryptoJS.getDMDSignedMessage(address).toString('hex'));
 
             const postfixHex = stringToUTF8Hex('');
-            const result = await claimContract.createClaimMessage(address, postfixHex, false);
+            const result = await claimContract.createClaimMessage(address, postfixHex);
 
             expect(result).to.be.equal(resultJS);
         });
@@ -187,7 +182,7 @@ describe('ClaimContract', () => {
             const resultJS = ensure0x(cryptoJS.getDMDSignedMessage(prefix + address).toString('hex'));
 
             const postfixHex = stringToUTF8Hex('');
-            const result = await claimContract.createClaimMessage(address, postfixHex, true);
+            const result = await claimContract.createClaimMessage(address, postfixHex);
 
             expect(result).to.be.equal(resultJS);
         });
@@ -260,17 +255,7 @@ describe('ClaimContract', () => {
             expect(bs58Result).to.equal(addressFromCryptJS);
         });
 
-        it('correct hash for claim message', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-            const message = '0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F';
-            const hash = ensure0x(bitcoinMessage.magicHash(message).toString('hex'));
-
-            const hashFromSolidity = await claimContract.getHashForClaimMessage(message, "0x", false);
-            expect(hash).to.be.equal(hashFromSolidity);
-        });
-
-        it('should recover public key from signature', async () => {
+        it('JS: should recover public key from signature', async () => {
             //https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
             //passphrase: bit.diamonds
 
@@ -283,7 +268,7 @@ describe('ClaimContract', () => {
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
-        it('should recover public key from signatures, test signatures set.', async () => {
+        it('JS: should recover public key from signatures, test signatures set.', async () => {
             // Same test as previous
             // But with multi signatures of the same key.
             // in order to cover different signatures variations,
@@ -307,61 +292,56 @@ describe('ClaimContract', () => {
             }
         });
 
-        it('should match recovered address with expected Etherem/Bitcoin pseudo address', async () => {
-            const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+        // it('should match recovered address with expected Etherem/Bitcoin pseudo address', async () => {
+        //     const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
 
-            // same test as previous
-            // But with multi signatures of the same key.
-            // in order to cover different signatures variations,
-            // like short S and short R
+        //     // same test as previous
+        //     // But with multi signatures of the same key.
+        //     // in order to cover different signatures variations,
+        //     // like short S and short R
 
-            // with this tool, we can create a Bitcoin address from a passphrase,
-            // also knowing X and Y.
+        //     // with this tool, we can create a Bitcoin address from a passphrase,
+        //     // also knowing X and Y.
 
-            // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
-            // passphrase: bit.diamonds
+        //     // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
+        //     // passphrase: bit.diamonds
 
-            // and with this tool we can create the equivalent Ethereum Address,
-            // with the same X and Y then the Bitcoin ist.
+        //     // and with this tool we can create the equivalent Ethereum Address,
+        //     // with the same X and Y then the Bitcoin ist.
 
-            // https://www.royalfork.org/2017/12/10/eth-graphical-address/
-            // passphrase: bit.diamonds
+        //     // https://www.royalfork.org/2017/12/10/eth-graphical-address/
+        //     // passphrase: bit.diamonds
 
-            const expectedEthAddress = '0xA5956975DE8711DFcc82DE5f8F5d151c41556656';
-            const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
+        //     const expectedEthAddress = '0xA5956975DE8711DFcc82DE5f8F5d151c41556656';
+        //     const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
 
-            // there for we can make a EC Recover on a bitcoin signed message and
-            // compare it with the Ethereum Signed Message
+        //     // there for we can make a EC Recover on a bitcoin signed message and
+        //     // compare it with the Ethereum Signed Message
 
-            const signaturesBase64 = getTestSignatures();
+        //     const signaturesBase64 = getTestSignatures();
 
-            for (let index = 0; index < signaturesBase64.length; index++) {
-                const signatureBase64 = getTestSignatures()[0];
-                const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
+        //     for (let index = 0; index < signaturesBase64.length; index++) {
+        //         const signatureBase64 = getTestSignatures()[0];
+        //         const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
 
-                const recoveredETHAddress = await claimContract.getEthAddressFromSignature(
-                    message,
-                    stringToUTF8Hex(''),
-                    '0x1b',
-                    ensure0x(rs.r),
-                    ensure0x(rs.s),
-                    false
-                );
-                const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
-                    message,
-                    stringToUTF8Hex(''),
-                    '0x1c',
-                    ensure0x(rs.r),
-                    ensure0x(rs.s),
-                    false
-                );
+        //         const recoveredETHAddress = await claimContract.getEthAddressFromSignature(
+        //             message,
+        //             stringToUTF8Hex(''),
+        //             '0x1b',
+        //             ensure0x(rs.r),
+        //             ensure0x(rs.s),
+        //         );
+        //         const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
+        //             message,
+        //             stringToUTF8Hex(''),
+        //             '0x1c',
+        //             ensure0x(rs.r),
+        //             ensure0x(rs.s)
+        //         );
 
-                expect(expectedEthAddress).to.be.oneOf([recoveredETHAddress, recoveredETHAddress2]);
-            }
-        });
-
-
-
+        //         expect(expectedEthAddress).to.be.oneOf([recoveredETHAddress, recoveredETHAddress2]);
+        //     }
+        // }).skip(); // .skip(); // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
 
         async function runAddAndClaimTests(testSet: TestBalances) {
 
@@ -385,7 +365,7 @@ describe('ClaimContract', () => {
 
             for (const balance of balances.balances) {
                 let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
-                await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "", balances.isDMDSigned);
+                await cryptoSol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "");
                 let balanceAfterClaim = await ethers.provider.getBalance(balance.dmdv4Address);
 
                 let expectedBalance = ethers.toBigInt(balance.value) + balanceBeforeClaim;
@@ -407,15 +387,6 @@ describe('ClaimContract', () => {
                 return { claimContract };
             }
 
-            it('should validate signature with defined prefix', async () => {
-                const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
-
-                const claimToAddress = "0x9edD67cCFd52211d769A7A09b989d148749B1d10";
-                const signatureBase64 = "IDuuajA4vgGuu77fdoE0tntWP5TMGPLDO2VduTqE6wPKR2+fnF+JFD3LErn8vtqk81fL3qfjJChcrUnG5eTv/tQ=";
-
-                await verifySignature(claimContract, claimToAddress, signatureBase64, false);
-            });
-
             it('should validate signature defined prefix and postfix', async () => {
                 const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
 
@@ -424,8 +395,8 @@ describe('ClaimContract', () => {
 
                 const suffixString = ' test suffix 123';
 
-                await verifySignature(claimContract, claimToAddress, signatureBase64, false, suffixString);
-            });
+                await verifySignature(claimContract, claimToAddress, signatureBase64, suffixString);
+            }).skip() // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
         });
 
         describe("balance", async function () {
@@ -562,10 +533,6 @@ describe('ClaimContract', () => {
 
         describe("claiming", async function () {
 
-            it("claiming BTC", async () => {
-                await runAddAndClaimTests(getTestBalances_BTC());
-            });
-
             // DMD claiming is known to fail.
             it("claiming DMD", async () => {
                 await runAddAndClaimTests(getTestBalances_DMD_cli());
@@ -576,5 +543,4 @@ describe('ClaimContract', () => {
             });
         });
     });
-
 });

@@ -30,15 +30,15 @@ export class CryptoSol {
     }
   }
 
-  public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string, dmdSig: boolean) {
+  public async claim(dmdV3Address: string, dmdV4Address: string, signature: string, postfix: string) {
     
     let postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, postfixHex, dmdSig);
+    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, postfixHex);
     this.log('Claim Message: ' , claimMessage);
 
     let prefixString = await this.prefixString();
-    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, dmdSig);
+    const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, true);
 
     const rs = this.cryptoJS.signatureBase64ToRSV(signature);
 
@@ -55,21 +55,21 @@ export class CryptoSol {
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
     this.log('dmdV3AddressFromDataBase58:      ', dmdV3Address);
 
-    let v = await this.recoverV(dmdV4Address, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s, dmdSig);
+    let v = await this.recoverV(dmdV4Address, postfixHex, pubKeyX, pubKeyY, rs.r, rs.s);
 
-    let claimOperation = this.instance.claim(dmdV4Address, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, dmdSig, { gasLimit: 200_000, gasPrice: "1000000000" });
+    let claimOperation = this.instance.claim(dmdV4Address, postfixHex, pubKeyX, pubKeyY, v, rs.r, rs.s, { gasLimit: 200_000, gasPrice: "1000000000" });
     let receipt = await (await claimOperation).wait();
     // console.log("receipt: ", receipt?.toJSON())
     return receipt;
   }
 
-  public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer, dmdSig: boolean) : Promise<string> {
+  public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer) : Promise<string> {
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s, dmdSig)) { 
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s)) { 
       return "0x1b";
     }
 
-    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s, dmdSig)) { 
+    if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1c", r, s)) { 
       return "0x1c";
     }
 

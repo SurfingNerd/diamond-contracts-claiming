@@ -113,25 +113,25 @@ export interface TestBalances {
 
 
 
-export function getTestBalances_BTC() : TestBalances {
-    // balances for 
-    // const prefix = "";
-    // const seedPhrase: "BTC claiming on DMDv4";
-    // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
+// export function getTestBalances_BTC() : TestBalances {
+//     // balances for 
+//     // const prefix = "";
+//     // const seedPhrase: "BTC claiming on DMDv4";
+//     // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
     
-    let balances = [
-        // this signature has 32 byte as R and S value length.
-        { dmdv3Address: '13y2CTdWAdP8JuGWJUxUoPnWRZhdqjgYQF', dmdv4Address: '0x03fC83270Ee8c65dAa39a87296Ec7685384F7Cb1', value: '10000', signature: 'IJ+qCFWmxrZBS2gVNECVlaimliWKmxNK33/lEWn7nUn1CUxLTlqOp7bNKmq9hQuLA0j3/apqT4tkuYw4IrWMtUg=' },
-    ];
+//     let balances = [
+//         // this signature has 32 byte as R and S value length.
+//         { dmdv3Address: '13y2CTdWAdP8JuGWJUxUoPnWRZhdqjgYQF', dmdv4Address: '0x03fC83270Ee8c65dAa39a87296Ec7685384F7Cb1', value: '10000', signature: 'IJ+qCFWmxrZBS2gVNECVlaimliWKmxNK33/lEWn7nUn1CUxLTlqOp7bNKmq9hQuLA0j3/apqT4tkuYw4IrWMtUg=' },
+//     ];
 
-    return {
-        isDMDSigned: false,
-        seedphrase: "BTC claiming on DMDv4",
-        messagePrefix: "",
-        balances: balances
-    }
+//     return {
+//         isDMDSigned: false,
+//         seedphrase: "BTC claiming on DMDv4",
+//         messagePrefix: "",
+//         balances: balances
+//     }
     
-}
+// }
 
 export function getTestBalances_DMD() {
     

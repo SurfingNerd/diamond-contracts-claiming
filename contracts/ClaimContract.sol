@@ -13,9 +13,6 @@ contract ClaimContract {
     uint8 internal constant CLAIM_PARAM_HASH_BYTE_LEN = 12;
     uint8 internal constant CLAIM_PARAM_HASH_HEX_LEN = CLAIM_PARAM_HASH_BYTE_LEN * 2;
 
-    uint8 internal constant BITCOIN_SIG_PREFIX_LEN = 24;
-    bytes24 internal constant BITCOIN_SIG_PREFIX_STR = "Bitcoin Signed Message:\n";
-
     uint8 internal constant DIAMOND_SIG_PREFIX_LEN = 24;
     bytes24 internal constant DIAMOND_SIG_PREFIX_STR = "Diamond Signed Message:\n";
 
@@ -132,8 +129,7 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s,
-        bool _dmdSignature
+        bytes32 _s
     ) external {
         //retrieve the oldAddress out of public key.
         bytes20 oldAddress = publicKeyToBitcoinAddress(
@@ -154,8 +150,7 @@ contract ClaimContract {
                 _pubKeyY,
                 _v,
                 _r,
-                _s,
-                _dmdSignature
+                _s
             ),
             "Signature does not match for this claiming procedure."
         );
@@ -274,29 +269,17 @@ contract ClaimContract {
      */
     function createClaimMessage(
         address _claimToAddr,
-        bytes memory _postfix,
-        bool _dmdSignature
+        bytes memory _postfix
     ) public view returns (bytes memory) {
         //TODO: pass this as an argument. evaluate in JS before includeAddrChecksum is used or not.
         //now for testing, we assume Yes.
 
         bytes memory addrStr = calculateAddressString(_claimToAddr);
 
-        if (_dmdSignature) {
-            return
-                abi.encodePacked(
-                    DIAMOND_SIG_PREFIX_LEN,
-                    DIAMOND_SIG_PREFIX_STR,
-                    uint8(prefixStr.length) + ETH_ADDRESS_HEX_LEN + 2 + uint8(_postfix.length),
-                    prefixStr,
-                    addrStr,
-                    _postfix
-                );
-        }
         return
             abi.encodePacked(
-                BITCOIN_SIG_PREFIX_LEN,
-                BITCOIN_SIG_PREFIX_STR,
+                DIAMOND_SIG_PREFIX_LEN,
+                DIAMOND_SIG_PREFIX_STR,
                 uint8(prefixStr.length) + ETH_ADDRESS_HEX_LEN + 2 + uint8(_postfix.length),
                 prefixStr,
                 addrStr,
@@ -311,10 +294,9 @@ contract ClaimContract {
      */
     function getHashForClaimMessage(
         address _claimToAddr,
-        bytes memory _postfix,
-        bool _dmdSignature
+        bytes memory _postfix
     ) public view returns (bytes32) {
-        return calcHash256(createClaimMessage(_claimToAddr, _postfix, _dmdSignature));
+        return calcHash256(createClaimMessage(_claimToAddr, _postfix));
     }
 
     /**
@@ -331,14 +313,13 @@ contract ClaimContract {
         bytes memory _postfix,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s,
-        bool _dmdSignature
+        bytes32 _s
     ) public view returns (address) {
         //require(_v >= 27 && _v <= 30, "v invalid");
 
         /* Create and hash the claim message text */
         bytes32 messageHash = calcHash256(
-            createClaimMessage(_claimToAddr, _postfix, _dmdSignature)
+            createClaimMessage(_claimToAddr, _postfix)
         );
 
         return ecrecover(messageHash, _v, _r, _s);
@@ -351,8 +332,7 @@ contract ClaimContract {
         bytes32 _pubKeyY,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s,
-        bool _dmdSignature
+        bytes32 _s
     ) public view returns (bool) {
         require(_v >= 27 && _v <= 30, "v invalid");
 
@@ -365,7 +345,7 @@ contract ClaimContract {
         //we need to check if X and Y corresponds to R and S.
 
         /* Create and hash the claim message text */
-        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _postFix, _dmdSignature);
+        bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _postFix);
 
         /* Verify the public key */
         return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
@@ -407,12 +387,8 @@ contract ClaimContract {
         bytes32 _publicKeyX,
         bytes32 _publicKeyY
     ) public pure returns (bytes20 rawBtcAddress) {
-
-        uint8 initialByte;
-        //Hash the compressed format
-        initialByte = (uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03;
         return ripemd160(
-            abi.encodePacked(sha256(abi.encodePacked(initialByte, _publicKeyX)))
+            abi.encodePacked(sha256(abi.encodePacked((uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03, _publicKeyX)))
         );
     }
 
