@@ -93,21 +93,6 @@ export class CryptoSol {
     }
   }
 
-  /**
-   * Retrieves the message that is used for hashing in bitcoin. (enpacking it with the Envolope)
-   * see also: https://bitcoin.stackexchange.com/questions/77324/how-are-bitcoin-signed-messages-generated
-   * @param address Ethereum style address, include checksum information.
-   */
-  public async addressToClaimMessage(address: string, postfix: string = '', dmdSig: boolean = false): Promise<string> {
-
-    const postfixHex = stringToUTF8Hex(postfix);
-
-    const claimMessage = await this.instance.createClaimMessage(address, postfixHex, dmdSig);
-    this.log('Claim Message:');
-    this.log(claimMessage);
-    return claimMessage;
-  }
-
   public async messageToHash(messageString: string) {
 
     const buffer = Buffer.from(messageString, 'utf-8');
@@ -116,72 +101,6 @@ export class CryptoSol {
     this.log('messageToHash');
     this.log(hash);
     return hash;
-  }
-
-
-  public async claimMessageMatchesSignature(
-    claimToAddress: string,
-    postfix: string,
-    pubkeyX: string,
-    pubkeyY: string,
-    sigV: string,
-    sigR: string,
-    sigS: string,
-    dmd: boolean):
-    Promise<boolean> {
-    const result =
-      await this.instance.claimMessageMatchesSignature(
-        claimToAddress,
-        stringToUTF8Hex(postfix),
-        ensure0x(pubkeyX),
-        ensure0x(pubkeyY),
-        ensure0x(sigV),
-        ensure0x(sigR),
-        ensure0x(sigS), 
-        dmd);
-    this.log('Claim Result: ', result);
-    return result;
-  }
-
-  public async getEthAddressFromSignature(
-    claimToAddress: string,
-    addressContainsChecksum: boolean,
-    postfix: string,
-    sigV: string,
-    sigR: string | Buffer,
-    sigS: string | Buffer,
-    dmd: boolean)
-    : Promise<string> {
-
-    return this.instance.getEthAddressFromSignature(
-      claimToAddress,
-      stringToUTF8Hex(postfix),
-      ensure0x(sigV),
-      ensure0x(sigR),
-      ensure0x(sigS),
-      dmd
-    );
-  }
-
-  /**
-   * returns the essential part of a Bitcoin-style legacy compressed address associated with the given ECDSA public key
-   * @param x X coordinate of the ECDSA public key
-   * @param y Y coordinate of the ECDSA public key
-   * @returns Hex string holding the essential part of the legacy compressed address associated with the given ECDSA public key
-   */
-  async publicKeyToBitcoinAddressEssential(x: bigint, y: bigint): Promise<string> {
-    const legacyCompressedEnumValue = 1;
-
-    return this.instance.publicKeyToBitcoinAddress(
-      toHexString(x),
-      toHexString(y),
-      legacyCompressedEnumValue
-    );
-  }
-
-  async publicKeyToBitcoinAddress(x: bigint, y: bigint, addressPrefix: string) {
-    const essentialPart = await this.publicKeyToBitcoinAddressEssential(x, y);
-    return this.cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(essentialPart, addressPrefix);
   }
 
   public async pubKeyToEthAddress(x: string, y: string) {

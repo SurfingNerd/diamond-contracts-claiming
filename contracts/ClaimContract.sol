@@ -299,32 +299,6 @@ contract ClaimContract {
         return calcHash256(createClaimMessage(_claimToAddr, _postfix));
     }
 
-    /**
-     * @dev returns the ethereum pseude address of a DMD signed message.
-     * @param _claimToAddr address target address for the claim.
-     * @param _v uint8 v component of the signature.
-     * @param _r bytes32 r component of the signature.
-     * @param _s bytes32 s component of the signautre.
-     * @return address DMD pseudo address of the signer.
-     * (what would be the address if the same Private Key would have been used on an DMDv3 than in DMDv4)
-     */
-    function getEthAddressFromSignature(
-        address _claimToAddr,
-        bytes memory _postfix,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) public view returns (address) {
-        //require(_v >= 27 && _v <= 30, "v invalid");
-
-        /* Create and hash the claim message text */
-        bytes32 messageHash = calcHash256(
-            createClaimMessage(_claimToAddr, _postfix)
-        );
-
-        return ecrecover(messageHash, _v, _r, _s);
-    }
-
     function claimMessageMatchesSignature(
         address _claimToAddr,
         bytes memory _postFix,
