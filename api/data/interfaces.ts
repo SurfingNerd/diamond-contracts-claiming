@@ -1,10 +1,11 @@
 
-
-
-export interface ClaimingBalance {
-    dmdv3Address: string;
-    dmdv4Address: string;
+export interface BalanceV3 {
+    dmdv3Address: string,
     value: string;
+}
+
+export interface ClaimingBalance extends BalanceV3 {
+    dmdv4Address: string;
     signature: string;
 }
 

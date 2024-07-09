@@ -313,7 +313,7 @@ contract ClaimContract {
         /*
           ecrecover() returns an Eth address rather than a public key, so
           we must do the same to compare.
-      */
+        */
         address pubKeyEthAddr = pubKeyToEthAddress(_pubKeyX, _pubKeyY);
 
         //we need to check if X and Y corresponds to R and S.

@@ -97,25 +97,23 @@ export function getTestBalances_DMD_cli_invalid_signature_size(): ClaimingDataSe
 
 
 
-// export function getTestBalances_BTC() : TestBalances {
-//     // balances for 
-//     // const prefix = "";
-//     // const seedPhrase: "BTC claiming on DMDv4";
-//     // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
-    
-//     let balances = [
-//         // this signature has 32 byte as R and S value length.
-//         { dmdv3Address: '13y2CTdWAdP8JuGWJUxUoPnWRZhdqjgYQF', dmdv4Address: '0x03fC83270Ee8c65dAa39a87296Ec7685384F7Cb1', value: '10000', signature: 'IJ+qCFWmxrZBS2gVNECVlaimliWKmxNK33/lEWn7nUn1CUxLTlqOp7bNKmq9hQuLA0j3/apqT4tkuYw4IrWMtUg=' },
-//     ];
+export function getTestBalances_dillution(): ClaimingDataSet {
+    let balances = [
+        { dmdv3Address: 'dT8AGpNognttzamD5ujLUmkaCCX4njJLb7', dmdv4Address: '', value: '10000', signature: '' },
+        { dmdv3Address: 'da9UYdEJ69k9ax3w4GrWfCwE3LMgi6Pvja', dmdv4Address: '', value: '10000', signature: '' },
+        { dmdv3Address: 'dVq6QJXwnAy3pWHVnrotuys5RGS4S3b9dF', dmdv4Address: '', value: '10000', signature: '' },
+        { dmdv3Address: 'dQApo9DiUfuD6dmikqqAzFmfuMQjdp3uUB', dmdv4Address: '', value: '10000', signature: '' },  
+    ];
 
-//     return {
-//         isDMDSigned: false,
-//         seedphrase: "BTC claiming on DMDv4",
-//         messagePrefix: "",
-//         balances: balances
-//     }
-    
-// }
+
+    return {
+        isDMDSigned: true,
+        seedphrase: undefined, // we do not have a seedphrase for this test.
+        messagePrefix: "claim to: ",
+        balances: balances
+    }
+}
+
 
 export function getTestBalances_DMD() {
     

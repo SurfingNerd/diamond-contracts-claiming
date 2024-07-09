@@ -5,20 +5,15 @@ import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 
 import EC from "elliptic";
 import BN from "bn.js";
-import bitcoinMessage from "bitcoinjs-message";
-
-import ECPairFactory from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 
 import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
+import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
-
-
-const ECPair = ECPairFactory(ecc);
+import { ClaimingDataSet } from "../api/data/interfaces";
+ 
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
@@ -292,58 +287,7 @@ describe('ClaimContract', () => {
             }
         });
 
-        // it('should match recovered address with expected Etherem/Bitcoin pseudo address', async () => {
-        //     const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-        //     // same test as previous
-        //     // But with multi signatures of the same key.
-        //     // in order to cover different signatures variations,
-        //     // like short S and short R
-
-        //     // with this tool, we can create a Bitcoin address from a passphrase,
-        //     // also knowing X and Y.
-
-        //     // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
-        //     // passphrase: bit.diamonds
-
-        //     // and with this tool we can create the equivalent Ethereum Address,
-        //     // with the same X and Y then the Bitcoin ist.
-
-        //     // https://www.royalfork.org/2017/12/10/eth-graphical-address/
-        //     // passphrase: bit.diamonds
-
-        //     const expectedEthAddress = '0xA5956975DE8711DFcc82DE5f8F5d151c41556656';
-        //     const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
-
-        //     // there for we can make a EC Recover on a bitcoin signed message and
-        //     // compare it with the Ethereum Signed Message
-
-        //     const signaturesBase64 = getTestSignatures();
-
-        //     for (let index = 0; index < signaturesBase64.length; index++) {
-        //         const signatureBase64 = getTestSignatures()[0];
-        //         const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
-
-        //         const recoveredETHAddress = await claimContract.getEthAddressFromSignature(
-        //             message,
-        //             stringToUTF8Hex(''),
-        //             '0x1b',
-        //             ensure0x(rs.r),
-        //             ensure0x(rs.s),
-        //         );
-        //         const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
-        //             message,
-        //             stringToUTF8Hex(''),
-        //             '0x1c',
-        //             ensure0x(rs.r),
-        //             ensure0x(rs.s)
-        //         );
-
-        //         expect(expectedEthAddress).to.be.oneOf([recoveredETHAddress, recoveredETHAddress2]);
-        //     }
-        // }).skip(); // .skip(); // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
-
-        async function runAddAndClaimTests(testSet: TestBalances) {
+        async function runAddAndClaimTests(testSet: ClaimingDataSet) {
 
             let deployFixtureSpecified = () => {
                 return deployFixture(testSet.messagePrefix);
