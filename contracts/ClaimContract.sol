@@ -81,9 +81,18 @@ contract ClaimContract {
         prefixStr = _prefixStr;
         deploymentTimestamp = block.timestamp;
 
-        require(_dilute_s1_75_timestamp > block.timestamp, "dilute_s1_75_timestamp must be in future");
-        require(_dilute_s2_50_timestamp > _dilute_s1_75_timestamp, "dilute_s2_50_timestamp must be greater than dilute_s1_75_timestamp");
-        require(_dilute_s3_0_timestamp > _dilute_s2_50_timestamp, "dilute_s3_0_timestamp must be greater than dilute_s2_50_timestamp");
+        require(
+            _dilute_s1_75_timestamp > block.timestamp,
+            "dilute_s1_75_timestamp must be in future"
+        );
+        require(
+            _dilute_s2_50_timestamp > _dilute_s1_75_timestamp,
+            "dilute_s2_50_timestamp must be greater than dilute_s1_75_timestamp"
+        );
+        require(
+            _dilute_s3_0_timestamp > _dilute_s2_50_timestamp,
+            "dilute_s3_0_timestamp must be greater than dilute_s2_50_timestamp"
+        );
 
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
@@ -132,10 +141,7 @@ contract ClaimContract {
         bytes32 _s
     ) external {
         //retrieve the oldAddress out of public key.
-        bytes20 oldAddress = publicKeyToBitcoinAddress(
-            _pubKeyX,
-            _pubKeyY
-        );
+        bytes20 oldAddress = publicKeyToBitcoinAddress(_pubKeyX, _pubKeyY);
 
         //if already claimed, it just returns.
         uint256 currentBalance = balances[oldAddress];
@@ -143,15 +149,7 @@ contract ClaimContract {
 
         // verify if the signature matches to the provided pubKey here.
         require(
-            claimMessageMatchesSignature(
-                _targetAdress,
-                _postfix,
-                _pubKeyX,
-                _pubKeyY,
-                _v,
-                _r,
-                _s
-            ),
+            claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s),
             "Signature does not match for this claiming procedure."
         );
 
@@ -361,9 +359,14 @@ contract ClaimContract {
         bytes32 _publicKeyX,
         bytes32 _publicKeyY
     ) public pure returns (bytes20 rawBtcAddress) {
-        return ripemd160(
-            abi.encodePacked(sha256(abi.encodePacked((uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03, _publicKeyX)))
-        );
+        return
+            ripemd160(
+                abi.encodePacked(
+                    sha256(
+                        abi.encodePacked((uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03, _publicKeyX)
+                    )
+                )
+            );
     }
 
     /**
@@ -392,9 +395,7 @@ contract ClaimContract {
      * @param _addr address
      * @return addrStr ethereum address(24 byte)
      */
-    function calculateAddressString(
-        address _addr
-    ) public pure returns (bytes memory addrStr) {
+    function calculateAddressString(address _addr) public pure returns (bytes memory addrStr) {
         bytes memory tmp = new bytes(ETH_ADDRESS_HEX_LEN);
         _hexStringFromData(tmp, bytes32(bytes20(_addr)), 0, ETH_ADDRESS_BYTE_LEN);
 
@@ -407,7 +408,7 @@ contract ClaimContract {
             _addressStringChecksumChar(tmp, offset++, b >> 4);
             _addressStringChecksumChar(tmp, offset++, b & 0x0f);
         }
-    
+
         // the correct checksum is now in the tmp variable.
         // we extend this by the Ethereum usual prefix 0x
 
