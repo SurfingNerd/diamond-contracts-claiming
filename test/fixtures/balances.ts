@@ -1,4 +1,5 @@
-import { ClaimingDataSet } from "../../api/data/interfaces.ts";
+import { ClaimingDataSet } from "../../api/data/interfaces";
+import { ethers } from "ethers";
 
 
 export function getTestBalances() {
@@ -93,28 +94,6 @@ export function getTestBalances_DMD_cli_invalid_signature_size(): ClaimingDataSe
     }
 }
 
-
-
-
-
-export function getTestBalances_dillution(): ClaimingDataSet {
-    let balances = [
-        { dmdv3Address: 'dT8AGpNognttzamD5ujLUmkaCCX4njJLb7', dmdv4Address: '', value: '10000', signature: '' },
-        { dmdv3Address: 'da9UYdEJ69k9ax3w4GrWfCwE3LMgi6Pvja', dmdv4Address: '', value: '10000', signature: '' },
-        { dmdv3Address: 'dVq6QJXwnAy3pWHVnrotuys5RGS4S3b9dF', dmdv4Address: '', value: '10000', signature: '' },
-        { dmdv3Address: 'dQApo9DiUfuD6dmikqqAzFmfuMQjdp3uUB', dmdv4Address: '', value: '10000', signature: '' },  
-    ];
-
-
-    return {
-        isDMDSigned: true,
-        seedphrase: undefined, // we do not have a seedphrase for this test.
-        messagePrefix: "claim to: ",
-        balances: balances
-    }
-}
-
-
 export function getTestBalances_DMD() {
     
     // balances for const prefix = "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ";
@@ -141,6 +120,34 @@ export function getTestBalances_DMD_with_prefix(): ClaimingDataSet {
         isDMDSigned: true,
         seedphrase: undefined, // we do not have a seedphrase for this test.
         messagePrefix: "I want to claim my DMD Diamond V4 coins for the Testnet to the following address: ",
+        balances: balances
+    }
+}
+
+
+/// This testset holds 4 accounts,
+/// each account represents a group if claims
+/// 1. claims with first timeslot
+/// 2. claims with 2nd timeslot (penalty 1)
+/// 3. claims in 3rd timeslot (penalty 2)
+/// 4. never claims at all, but funds get distributed 
+export function getTestBalances_dillution(): ClaimingDataSet {
+    
+    let dmd = (num: string) => {
+        return ethers.formatUnits(num,"ether");
+    }
+    
+    let balances = [
+        { dmdv3Address: 'dT8AGpNognttzamD5ujLUmkaCCX4njJLb7', dmdv4Address: '0x3db37B2f9a09a6136Ae4aed8402CeDe821FC27E3', value: dmd('282887850.5') , signature: 'IBQaj/m/+2aRGaUoT4VuteT0aDEOPpHCN4EoD+PDXPYmLA45VSo3iYrJNe1671ux84MY7uJ24IpHSoTIkf2uVkA=' },
+        { dmdv3Address: 'da9UYdEJ69k9ax3w4GrWfCwE3LMgi6Pvja', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: dmd('188591.90'), signature: 'ICTUSuAZ8Kwc+mdcuc6eHD5RuyLZB2XgO58Mk8/W+kNIHB4TNYRjVM/nMobJYJP5NQgUcs5vBSVyviWM8FLGe1I='},
+        { dmdv3Address: 'dVq6QJXwnAy3pWHVnrotuys5RGS4S3b9dF', dmdv4Address: '0xe79D037E4520dbFB395BA38a5B70e9EfC6c40760', value: dmd('188591.90'), signature: 'IFV2Y7XhUbPjLPLAKsBsJl/+VNm4QTz4HA42jNhWY2XTbNWFNsohquHeBwawSgKruAe9ukA6YmohVNIC3PfOEgQ=' },
+        { dmdv3Address: 'dQApo9DiUfuD6dmikqqAzFmfuMQjdp3uUB', dmdv4Address: 'will never get claimed, no address needed.', value: dmd('565775.70'), signature: 'will never get claimed, no signature needed.' },  
+    ];
+
+    return {
+        isDMDSigned: true,
+        seedphrase: undefined, // we do not have a seedphrase for this test.
+        messagePrefix: "claim for dillution unit test to: ",
         balances: balances
     }
 }
