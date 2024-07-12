@@ -19,7 +19,6 @@ async function main() {
     const contractFactory = await ethers.getContractFactory("ClaimContract");
     
     const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefix, dillute1, dillute2, dillute3);
-    //const claimContract = claimContractAny as ClaimContract;
     
     let claimContractAddress = await claimContract.getAddress();
     console.log('claim contract deployed to:', claimContractAddress);

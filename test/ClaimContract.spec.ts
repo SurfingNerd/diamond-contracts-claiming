@@ -38,9 +38,10 @@ describe('ClaimContract', () => {
         let prefixHex = stringToUTF8Hex(prefix);
 
         const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefixHex, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
-
         await claimContract.waitForDeployment();
-        return claimContract;
+
+        // why we need to bypass type checks here ?
+        return (claimContract as any) as ClaimContract;
     }
 
     async function deployFixtureWithNoPrefix(): Promise<{ claimContract: ClaimContract }> {
@@ -48,9 +49,9 @@ describe('ClaimContract', () => {
     }
 
     async function deployFixture(prefixHex: string): Promise<{ claimContract: ClaimContract }> {
-        const claimContractAny: any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
-        const claimContract = claimContractAny as ClaimContract;
-        return { claimContract }
+        
+        let claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
+        return { claimContract };
     }
 
     async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
@@ -321,13 +322,12 @@ describe('ClaimContract', () => {
             const claimToString = stringToUTF8Hex('claim to ');
 
             async function deployWithPrefixFixture(): Promise<{ claimContract: ClaimContract }> {
-                const claimContractUntyped: any = await deployClaiming(
+                const claimContract = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
                     claimToString
                 );
 
-                const claimContract = claimContractUntyped as ClaimContract;
                 return { claimContract };
             }
 

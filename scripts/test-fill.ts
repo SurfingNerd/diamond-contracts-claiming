@@ -29,7 +29,6 @@ async function main() {
     console.log("prefixHex", prefixHex);
     const claimContractAny : any = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefixHex, dillute1, dillute2, dillute3);
     const claimContract = claimContractAny as ClaimContract;
-    //const claimContract = claimContractAny as ClaimContract;
     
     await claimContract.waitForDeployment();
     let claimContractAddress = await claimContract.getAddress();
