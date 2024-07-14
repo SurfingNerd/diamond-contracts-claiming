@@ -10,10 +10,10 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
+import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 import { ClaimingDataSet } from "../api/data/interfaces";
- 
+
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
@@ -49,14 +49,14 @@ describe('ClaimContract', () => {
     }
 
     async function deployFixture(prefixHex: string): Promise<{ claimContract: ClaimContract }> {
-        
+
         let claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
         return { claimContract };
     }
 
     async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
-        
-        
+
+
         const prefixBytes = await claimContract.prefixStr();
         const prefixBuffer = hexToBuf(prefixBytes);
 
@@ -374,22 +374,13 @@ describe('ClaimContract', () => {
                 const caller = signers[0];
                 const testbalances = getTestBalances();
 
-                let expectedTotalBalance = ethers.toBigInt('0');
+                let cryptoSol = new CryptoSol(claimContract);
 
-                let accounts: string[] = [];
-                let balances: string[] = [];
 
-                for (const balance of testbalances) {
-                    accounts.push(ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
-                    balances.push(balance.value);
-                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-                }
-
-                await claimContract.connect(caller).fill(accounts, balances, { value: expectedTotalBalance });
+                let expectedTotalBalance = cryptoSol.fillBalances(claimContract, caller, testbalances);
 
                 const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-
 
                 for (const balance of testbalances) {
                     const currentBalance = await claimContract.balances(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
@@ -443,19 +434,6 @@ describe('ClaimContract', () => {
                         expect(x).to.equal(key.x, "Public key is not the same for all signatures.");
                         expect(y).to.equal(key.y, "Public key is not the same for all signatures.");
                     }
-
-
-
-                   // const essentialPart = await claimContract.publicKeyToBitcoinAddress(x, y, 1);
-                   // const bs58Result = cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
-                   //     essentialPart,
-                   //     '24'
-                   // );
-
-                   // console.log(balance.dmdv3Address);
-                   // console.log(bs58Result);
-
-                    //console.log(cryptoJS.publicKeyToBitcoinAddress(key.publicKey));
                 }
             });
 

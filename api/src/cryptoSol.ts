@@ -3,6 +3,8 @@ import { ClaimContract } from '../../typechain-types/index';
 import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { BalanceV3 } from "../data/interfaces";
 
 
 let base58check = require('base58check'); 
@@ -138,5 +140,22 @@ export class CryptoSol {
     // get the balance of ths address.
 
     return await ethers.provider.getBalance(address);
+  }
+
+
+  public async fillBalances(claimContract: ClaimContract, sponsor: SignerWithAddress, balances: BalanceV3[]) {
+
+      let expectedTotalBalance = ethers.toBigInt('0');
+      let accounts: string[] = [];
+      let balancesForContract: string[] = [];
+
+      for (const balance of balances) {
+          accounts.push(ensure0x(this.cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
+          balancesForContract.push(balance.value);
+          expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+      }
+
+      await claimContract.connect(sponsor).fill(accounts, balancesForContract, { value: expectedTotalBalance });
+      return expectedTotalBalance;
   }
 }
