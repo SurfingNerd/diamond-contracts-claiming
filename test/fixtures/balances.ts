@@ -134,7 +134,7 @@ export function getTestBalances_DMD_with_prefix(): ClaimingDataSet {
 export function getTestBalances_dillution(): ClaimingDataSet {
     
     let dmd = (num: string) => {
-        return ethers.formatUnits(num,"wei");
+        return ethers.formatUnits(ethers.parseEther(num),"wei");
     }
     // we work with a set of estimated balances her, and rounded it so it works as integer.
     let balances = [

@@ -6,7 +6,6 @@ import { hexToBuf } from './cryptoHelpers';
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { BalanceV3 } from "../data/interfaces";
 
-
 let base58check = require('base58check'); 
 
 /**
@@ -145,17 +144,23 @@ export class CryptoSol {
 
   public async fillBalances(claimContract: ClaimContract, sponsor: SignerWithAddress, balances: BalanceV3[]) {
 
-      let expectedTotalBalance = ethers.toBigInt('0');
+      let totalBalance = ethers.toBigInt('0');
       let accounts: string[] = [];
       let balancesForContract: string[] = [];
 
       for (const balance of balances) {
           accounts.push(ensure0x(this.cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
           balancesForContract.push(balance.value);
-          expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
+          totalBalance = totalBalance + ethers.toBigInt(balance.value);
       }
 
-      await claimContract.connect(sponsor).fill(accounts, balancesForContract, { value: expectedTotalBalance });
-      return expectedTotalBalance;
+      // console.log(accounts);
+      // console.log(balancesForContract);
+      // console.log(totalBalance);
+      await (await claimContract.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
+      
+      // console.log("result status", txResult?.status);
+      //console.log(await txResult?.getResult());
+      return totalBalance;
   }
 }

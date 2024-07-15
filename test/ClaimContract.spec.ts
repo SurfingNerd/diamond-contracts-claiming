@@ -470,9 +470,6 @@ describe('ClaimContract', () => {
             let sponsor: SignerWithAddress;
             let beneficorReinsertPot: SignerWithAddress;
             let beneficorDAO: SignerWithAddress;
-            let claimersEarly: SignerWithAddress;
-            let claimersMid: SignerWithAddress;
-            let claimersLate: SignerWithAddress;
             let totalAmountInClaimingPot: bigint = BigInt(0);  
     
             //const ONE_DAY = 86400n;
@@ -480,32 +477,42 @@ describe('ClaimContract', () => {
     
             beforeEach(async function () {
 
-                [sponsor, beneficorReinsertPot, beneficorDAO, claimersEarly, claimersMid, claimersLate] = await ethers.getSigners();
+                
+            });
     
-                const now = BigInt(Math.floor(Date.now() / 1000));
+            it("should dilute balances and pay out correctly", async function () {
+    
+                [sponsor, beneficorReinsertPot, beneficorDAO] = await ethers.getSigners();
+    
                 let testBalances = getTestBalances_dillution();
     
-                claimContract = (await deployFixture("claim in unit test: ")).claimContract;
+                claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
 
                 let sol = new CryptoSol(claimContract);
                 totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
-            });
-    
-            it("should correctly dilute balances over time", async function () {
-    
+
                 // Try to dilute before first dilution period - should fail
                 await expect(claimContract.dilute1()).to.be.revertedWith(
                     "dilute1 can only get called after the treshold timestamp got reached."
                 );
-    
+
+                let now = await claimContract.deploymentTimestamp();
+
+                let claimingBalances = getTestBalances_dillution();
+                const [claimersEarly, claimersMid, claimersLate] = claimingBalances.balances;
+
+                let claimResultNullable = await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
+                expect(claimResultNullable !== null, "claim result should never be null");
+                let claimResult = claimResultNullable!;
+                expect(claimResult.status === 0, "claiming should succed.");
+                
+
                 // Fast forward time to after first dilution period
                 //await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY) + 1]);
                 //await ethers.provider.send("evm_mine", []);
     
-                // Check initial balances of beneficiaries
-                // const initialBalanceReinsertPot = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
-                // const initialBalanceDAO = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
-    
+
+                
                 // // Trigger first dilution
                 // const tx1 = await claimContract.dilute1();
                 // const receipt1 = await tx1.wait();
