@@ -134,14 +134,14 @@ export function getTestBalances_DMD_with_prefix(): ClaimingDataSet {
 export function getTestBalances_dillution(): ClaimingDataSet {
     
     let dmd = (num: string) => {
-        return ethers.formatUnits(num,"ether");
+        return ethers.formatUnits(num,"wei");
     }
-    
+    // we work with a set of estimated balances her, and rounded it so it works as integer.
     let balances = [
-        { dmdv3Address: 'dT8AGpNognttzamD5ujLUmkaCCX4njJLb7', dmdv4Address: '0x3db37B2f9a09a6136Ae4aed8402CeDe821FC27E3', value: dmd('282887850.5') , signature: 'IBQaj/m/+2aRGaUoT4VuteT0aDEOPpHCN4EoD+PDXPYmLA45VSo3iYrJNe1671ux84MY7uJ24IpHSoTIkf2uVkA=' },
-        { dmdv3Address: 'da9UYdEJ69k9ax3w4GrWfCwE3LMgi6Pvja', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: dmd('188591.90'), signature: 'ICTUSuAZ8Kwc+mdcuc6eHD5RuyLZB2XgO58Mk8/W+kNIHB4TNYRjVM/nMobJYJP5NQgUcs5vBSVyviWM8FLGe1I='},
-        { dmdv3Address: 'dVq6QJXwnAy3pWHVnrotuys5RGS4S3b9dF', dmdv4Address: '0xe79D037E4520dbFB395BA38a5B70e9EfC6c40760', value: dmd('188591.90'), signature: 'IFV2Y7XhUbPjLPLAKsBsJl/+VNm4QTz4HA42jNhWY2XTbNWFNsohquHeBwawSgKruAe9ukA6YmohVNIC3PfOEgQ=' },
-        { dmdv3Address: 'dQApo9DiUfuD6dmikqqAzFmfuMQjdp3uUB', dmdv4Address: 'will never get claimed, no address needed.', value: dmd('565775.70'), signature: 'will never get claimed, no signature needed.' },  
+        { dmdv3Address: 'dT8AGpNognttzamD5ujLUmkaCCX4njJLb7', dmdv4Address: '0x3db37B2f9a09a6136Ae4aed8402CeDe821FC27E3', value: dmd('282887850') , signature: 'IBQaj/m/+2aRGaUoT4VuteT0aDEOPpHCN4EoD+PDXPYmLA45VSo3iYrJNe1671ux84MY7uJ24IpHSoTIkf2uVkA=' },
+        { dmdv3Address: 'da9UYdEJ69k9ax3w4GrWfCwE3LMgi6Pvja', dmdv4Address: '0x9edD67cCFd52211d769A7A09b989d148749B1d10', value: dmd('188591'), signature: 'ICTUSuAZ8Kwc+mdcuc6eHD5RuyLZB2XgO58Mk8/W+kNIHB4TNYRjVM/nMobJYJP5NQgUcs5vBSVyviWM8FLGe1I='},
+        { dmdv3Address: 'dVq6QJXwnAy3pWHVnrotuys5RGS4S3b9dF', dmdv4Address: '0xe79D037E4520dbFB395BA38a5B70e9EfC6c40760', value: dmd('188591'), signature: 'IFV2Y7XhUbPjLPLAKsBsJl/+VNm4QTz4HA42jNhWY2XTbNWFNsohquHeBwawSgKruAe9ukA6YmohVNIC3PfOEgQ=' },
+        { dmdv3Address: 'dQApo9DiUfuD6dmikqqAzFmfuMQjdp3uUB', dmdv4Address: 'will never get claimed, no address needed.', value: dmd('565775'), signature: 'will never get claimed, no signature needed.' },  
     ];
 
     return {

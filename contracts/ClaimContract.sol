@@ -185,7 +185,7 @@ contract ClaimContract {
             block.timestamp > getDilutionTimestamp1(),
             "dilute1 can only get called after the treshold timestamp got reached."
         );
-        require(dilution_s1_75_executed == false, "dilute1 event did already happen!");
+        require(dilution_s1_75_executed == false, "dilute1 event already happened!");
 
         dilution_s1_75_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.

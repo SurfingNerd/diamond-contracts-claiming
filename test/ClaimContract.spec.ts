@@ -377,7 +377,7 @@ describe('ClaimContract', () => {
                 let cryptoSol = new CryptoSol(claimContract);
 
 
-                let expectedTotalBalance = cryptoSol.fillBalances(claimContract, caller, testbalances);
+                let expectedTotalBalance = await cryptoSol.fillBalances(claimContract, caller, testbalances);
 
                 const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
@@ -464,5 +464,115 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
         });
+
+        describe("Dilution", function () {
+            let claimContract: ClaimContract;
+            let sponsor: SignerWithAddress;
+            let beneficorReinsertPot: SignerWithAddress;
+            let beneficorDAO: SignerWithAddress;
+            let claimersEarly: SignerWithAddress;
+            let claimersMid: SignerWithAddress;
+            let claimersLate: SignerWithAddress;
+            let totalAmountInClaimingPot: bigint = BigInt(0);  
+    
+            //const ONE_DAY = 86400n;
+            //const ETHER = BigInt(10n ** 18n);
+    
+            beforeEach(async function () {
+
+                [sponsor, beneficorReinsertPot, beneficorDAO, claimersEarly, claimersMid, claimersLate] = await ethers.getSigners();
+    
+                const now = BigInt(Math.floor(Date.now() / 1000));
+                let testBalances = getTestBalances_dillution();
+    
+                claimContract = (await deployFixture("claim in unit test: ")).claimContract;
+
+                let sol = new CryptoSol(claimContract);
+                totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
+            });
+    
+            it("should correctly dilute balances over time", async function () {
+    
+                // Try to dilute before first dilution period - should fail
+                await expect(claimContract.dilute1()).to.be.revertedWith(
+                    "dilute1 can only get called after the treshold timestamp got reached."
+                );
+    
+                // Fast forward time to after first dilution period
+                //await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY) + 1]);
+                //await ethers.provider.send("evm_mine", []);
+    
+                // Check initial balances of beneficiaries
+                // const initialBalanceReinsertPot = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
+                // const initialBalanceDAO = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
+    
+                // // Trigger first dilution
+                // const tx1 = await claimContract.dilute1();
+                // const receipt1 = await tx1.wait();
+                // expect(receipt1.status).to.equal(1);
+    
+                // await expect(claimContract.dilute1()).to.be.revertedWith(
+                //     "dilute1 event already happened."
+                // );
+    
+    
+                // // Check balances after first dilution
+                // const balanceAfterDilute1User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
+                // const balanceAfterDilute1User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
+                // expect(balanceAfterDilute1User1).to.equal(75n * ETHER); // 75% of 100
+                // expect(balanceAfterDilute1User2).to.equal(150n * ETHER); // 75% of 200
+    
+                // // Check beneficiary balances increased correctly
+                // const balanceReinsertPotAfterDilute1 = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
+                // const balanceDAOAfterDilute1 = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
+                // expect(balanceReinsertPotAfterDilute1 - initialBalanceReinsertPot).to.equal(37n * ETHER + 500n * (ETHER / 1000n)); // (25% of 300) / 2
+                // expect(balanceDAOAfterDilute1 - initialBalanceDAO).to.equal(37n * ETHER + 500n * (ETHER / 1000n)); // (25% of 300) / 2
+    
+                // // Try to dilute1 again - should fail
+                // await expect(claimContract.dilute1()).to.be.revertedWith("dilute1 event did already happen!");
+    
+                // // Fast forward time to second dilution period
+                // await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY)]);
+                // await ethers.provider.send("evm_mine", []);
+    
+                // // Trigger second dilution
+                // const tx2 = await claimContract.dilute2();
+                // const receipt2 = await tx2.wait();
+                // expect(receipt2.status).to.equal(1);
+    
+                // // Check balances after second dilution
+                // const balanceAfterDilute2User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
+                // const balanceAfterDilute2User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
+                // expect(balanceAfterDilute2User1).to.equal(50n * ETHER); // 50% of 100
+                // expect(balanceAfterDilute2User2).to.equal(100n * ETHER); // 50% of 200
+    
+                // // Fast forward time to third dilution period
+                // await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY)]);
+                // await ethers.provider.send("evm_mine", []);
+    
+                // // Trigger third dilution
+                // const tx3 = await claimContract.dilute3();
+                // const receipt3 = await tx3.wait();
+                // expect(receipt3.status).to.equal(1);
+    
+                // // Check balances after third dilution
+                // const balanceAfterDilute3User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
+                // const balanceAfterDilute3User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
+                // expect(balanceAfterDilute3User1).to.equal(0n); // 0% of 100
+                // expect(balanceAfterDilute3User2).to.equal(0n); // 0% of 200
+    
+                // // Check final beneficiary balances
+                // const finalBalanceReinsertPot = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
+                // const finalBalanceDAO = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
+                // expect(finalBalanceReinsertPot - initialBalanceReinsertPot).to.equal(150n * ETHER); // Half of total initial balance
+                // expect(finalBalanceDAO - initialBalanceDAO).to.equal(150n * ETHER); // Half of total initial balance
+    
+                // // Try to dilute after all dilutions - should fail
+                // await expect(claimContract.dilute1()).to.be.revertedWith("dilute1 event did already happen!");
+                // await expect(claimContract.dilute2()).to.be.revertedWith("dilute2 event did already happen!");
+                // await expect(claimContract.dilute3()).to.be.revertedWith("dilute3 event did already happen!");
+            });
+        });
+    
     });
 });
