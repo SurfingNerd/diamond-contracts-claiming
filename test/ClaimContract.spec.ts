@@ -501,11 +501,10 @@ describe('ClaimContract', () => {
                 let claimingBalances = getTestBalances_dillution();
                 const [claimersEarly, claimersMid, claimersLate] = claimingBalances.balances;
 
-                let claimResultNullable = await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
-                expect(claimResultNullable !== null, "claim result should never be null");
-                let claimResult = claimResultNullable!;
-                expect(claimResult.status === 0, "claiming should succed.");
-                
+                // claiming all the coins that are expected to claim within first claiming period here.
+                // those will receive 100% of coins
+                await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
+
                 // does the early claimer have the exact amount of coins than he should have ?
                 let earlyClaimerBalance = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
                 expect(earlyClaimerBalance).to.be.equal(BigInt(claimersEarly.value));
@@ -513,14 +512,10 @@ describe('ClaimContract', () => {
                 // a second claim must not be possible.
                 await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
 
-                //await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
-                
-                // Fast forward time to after first dilution period
-                //await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY) + 1]);
-                //await ethers.provider.send("evm_mine", []);
-    
+                // Fast forward time to after first dilution period.
+                await helpers.time.increaseTo((await claimContract.dilute_s1_75_timestamp()) + BigInt(1));
 
-                
+
                 // // Trigger first dilution
                 // const tx1 = await claimContract.dilute1();
                 // const receipt1 = await tx1.wait();
