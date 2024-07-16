@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { ClaimContract } from '../../typechain-types/index';
-import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
+import { ensure0x, ensure0xb32, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -43,12 +43,11 @@ export class CryptoSol {
 
     const rs = this.cryptoJS.signatureBase64ToRSV(signature);
 
-    let pubKeyX = ensure0x(pubkey.x);
-    let pubKeyY = ensure0x(pubkey.y);
+    let pubKeyX = ensure0xb32(pubkey.x);
+    let pubKeyY = ensure0xb32(pubkey.y);
 
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
-
     
     let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY);
 

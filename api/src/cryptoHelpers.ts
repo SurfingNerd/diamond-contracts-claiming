@@ -5,6 +5,27 @@ export function remove0x(input: string) {
   return input;
 }
 
+export function ensure0xb32(input: string) : string {
+
+  let buf = hexToBuf(input);
+
+  if (buf.length == 32) {
+    return input;
+  }
+
+  //let buf = new Buffer() 
+  //while (buf.length < 32) {
+
+  if (buf.length > 32) {
+    // maybe the buffer starts with 0 ?
+    throw Error("Hex strings greater then 32 byte are not supported");
+  }
+
+  let prefix = Buffer.alloc(32 - buf.length, 0);
+  let resultBuf = Buffer.concat([prefix, buf]);
+  return ensure0x(resultBuf);
+}
+
 export function ensure0x(input: string | Buffer) {
 
   if (input instanceof Buffer) {
@@ -15,7 +36,6 @@ export function ensure0x(input: string | Buffer) {
     return '0x' + input;
   }
   return input;
-
 }
 
 export function toHexString(input: bigint) {
