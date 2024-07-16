@@ -506,7 +506,15 @@ describe('ClaimContract', () => {
                 let claimResult = claimResultNullable!;
                 expect(claimResult.status === 0, "claiming should succed.");
                 
+                // does the early claimer have the exact amount of coins than he should have ?
+                let earlyClaimerBalance = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
+                expect(earlyClaimerBalance).to.be.equal(BigInt(claimersEarly.value));
 
+                // a second claim must not be possible.
+                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
+
+                //await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
+                
                 // Fast forward time to after first dilution period
                 //await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY) + 1]);
                 //await ethers.provider.send("evm_mine", []);
