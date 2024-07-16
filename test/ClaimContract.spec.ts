@@ -12,7 +12,7 @@ import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/crypto
 import { getTestSignatures } from "./fixtures/signature";
 import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
-import { ClaimingDataSet } from "../api/data/interfaces";
+import { ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
 
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
@@ -489,6 +489,8 @@ describe('ClaimContract', () => {
                 claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
 
                 let sol = new CryptoSol(claimContract);
+                // sol.setLogDebug(true);
+
                 totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
 
                 // Try to dilute before first dilution period - should fail
@@ -501,22 +503,39 @@ describe('ClaimContract', () => {
                 let claimingBalances = getTestBalances_dillution();
                 const [claimersEarly, claimersMid, claimersLate] = claimingBalances.balances;
 
+                
+                let claimPreconfiguredBalance = async (balance: ClaimingBalance) => {
+                    // console.log("claiming:", balance);
+                    await sol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "");
+                }
+
+                await claimPreconfiguredBalance(claimersEarly);
+
                 // claiming all the coins that are expected to claim within first claiming period here.
                 // those will receive 100% of coins
-                await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
+                // await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
 
                 // does the early claimer have the exact amount of coins than he should have ?
-                let earlyClaimerBalance = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
-                expect(earlyClaimerBalance).to.be.equal(BigInt(claimersEarly.value));
+                let claimerBalanceEarly = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
+                expect(claimerBalanceEarly).to.be.equal(BigInt(claimersEarly.value));
 
                 // a second claim must not be possible.
                 await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
 
+                // we can not execute any of the dillution functions, because not enough time passed by.
+                await expect(claimContract.dilute1()).to.be.rejectedWith("dilute1 can only get called after the treshold timestamp got reached.");
+                await expect(claimContract.dilute2()).to.be.rejectedWith("dilute2 can only get called after the treshold timestamp got reached.");
+                await expect(claimContract.dilute3()).to.be.rejectedWith("dilute3 can only get called after the treshold timestamp got reached.");
+
                 // Fast forward time to after first dilution period.
                 await helpers.time.increaseTo((await claimContract.dilute_s1_75_timestamp()) + BigInt(1));
 
+                await claimPreconfiguredBalance(claimersMid);
 
-                // // Trigger first dilution
+                let claimerBalanceMid = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
+                expect(claimerBalanceMid).to.be.equal(BigInt(claimersEarly.value));
+
+                // Trigger first dilution
                 // const tx1 = await claimContract.dilute1();
                 // const receipt1 = await tx1.wait();
                 // expect(receipt1.status).to.equal(1);
