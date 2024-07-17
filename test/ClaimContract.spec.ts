@@ -530,20 +530,27 @@ describe('ClaimContract', () => {
                 // Fast forward time to after first dilution period.
                 await helpers.time.increaseTo((await claimContract.dilute_s1_75_timestamp()) + BigInt(1));
 
+                // time has come, everybody can now call dilute1().
+                // a programmed service will wait for this event and trigger the execution.
+                await claimContract.dilute1();
+
+                // but it is only able to be triggered once
+                await expect(claimContract.dilute1()).to.be.rejectedWith("dilute1 event already happened!");
+
+                // dilute 2 + 3 are still not triggerable.
+                await expect(claimContract.dilute2()).to.be.rejectedWith("dilute2 can only get called after the treshold timestamp got reached.");
+                await expect(claimContract.dilute3()).to.be.rejectedWith("dilute3 can only get called after the treshold timestamp got reached.");
+
+                
                 await claimPreconfiguredBalance(claimersMid);
 
-                let claimerBalanceMid = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
-                expect(claimerBalanceMid).to.be.equal(BigInt(claimersEarly.value));
+                let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
+                
+                // claimer receive 75%.
+                let expectedBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
+                expect(claimerBalanceMid).to.be.equal(expectedBalanceMid);
 
-                // Trigger first dilution
-                // const tx1 = await claimContract.dilute1();
-                // const receipt1 = await tx1.wait();
-                // expect(receipt1.status).to.equal(1);
-    
-                // await expect(claimContract.dilute1()).to.be.revertedWith(
-                //     "dilute1 event already happened."
-                // );
-    
+                // todo calculate
     
                 // // Check balances after first dilution
                 // const balanceAfterDilute1User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
