@@ -12,7 +12,7 @@ import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/crypto
 import { getTestSignatures } from "./fixtures/signature";
 import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
-import { ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
+import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
 
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
@@ -93,8 +93,12 @@ describe('ClaimContract', () => {
     before(async () => {
         signers = await ethers.getSigners();
 
-        lateClaimBeneficorAddress = signers[0].address;
-        lateClaimBeneficorDAO = signers[1].address;
+        // this 2 address will are contracts addresses in Diamond.
+        // this ClaimingContract contract only fills those 2 addresses.
+        // the example address are also the address the deployment of the DAO and the Core contract will happen on the real network.
+
+        lateClaimBeneficorAddress = "0x2000000000000000000000000000000000000001";
+        lateClaimBeneficorDAO = "0xDA0da0da0Da0Da0Da0DA00DA0da0da0DA0DA0dA0";
 
         cryptoJS = new CryptoJS();
     });
@@ -468,8 +472,6 @@ describe('ClaimContract', () => {
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
-            let beneficorReinsertPot: SignerWithAddress;
-            let beneficorDAO: SignerWithAddress;
             let totalAmountInClaimingPot: bigint = BigInt(0);  
     
             //const ONE_DAY = 86400n;
@@ -482,7 +484,7 @@ describe('ClaimContract', () => {
     
             it("should dilute balances and pay out correctly", async function () {
     
-                [sponsor, beneficorReinsertPot, beneficorDAO] = await ethers.getSigners();
+                [sponsor] = await ethers.getSigners();
     
                 let testBalances = getTestBalances_dillution();
     
@@ -501,7 +503,7 @@ describe('ClaimContract', () => {
                 let now = await claimContract.deploymentTimestamp();
 
                 let claimingBalances = getTestBalances_dillution();
-                const [claimersEarly, claimersMid, claimersLate] = claimingBalances.balances;
+                const [claimersEarly, claimersMid, claimersLate, claimersNever] = claimingBalances.balances;
 
                 
                 let claimPreconfiguredBalance = async (balance: ClaimingBalance) => {
@@ -541,7 +543,28 @@ describe('ClaimContract', () => {
                 await expect(claimContract.dilute2()).to.be.rejectedWith("dilute2 can only get called after the treshold timestamp got reached.");
                 await expect(claimContract.dilute3()).to.be.rejectedWith("dilute3 can only get called after the treshold timestamp got reached.");
 
+
+                // dilute1() pays out not claimed coins to the DAO and the reinsert pot.
+                // both will get 50% each.
+
+                // not payed out coins is the dilution factor of 25% of the total balance of all remaining claims.
                 
+                const getRemainingBalance = (notClaimedBalances: BalanceV3[]) => {
+                    return notClaimedBalances.map(b=> BigInt(b.value)).reduce((a,b) => a + b);
+                }
+
+                const remainingBalanceToClaimAfterEarly = getRemainingBalance([claimersMid, claimersLate, claimersNever]);
+
+                // 25% of the balances that have not been claimed should go to the pots.
+                let expectedTotalPotBalances = remainingBalanceToClaimAfterEarly / BigInt(4);
+
+                // hint: because 1 can not be divided by 2, this test wont work with Odd Numbers.
+                let expectedDaoBalance = expectedTotalPotBalances / BigInt(2);
+                let expectedReinsertPotBalance = expectedTotalPotBalances / BigInt(2);
+
+                expect(expectedDaoBalance).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+
                 await claimPreconfiguredBalance(claimersMid);
 
                 let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
@@ -550,32 +573,8 @@ describe('ClaimContract', () => {
                 let expectedBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
                 expect(claimerBalanceMid).to.be.equal(expectedBalanceMid);
 
-                // todo calculate
-    
-                // // Check balances after first dilution
-                // const balanceAfterDilute1User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
-                // const balanceAfterDilute1User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
-                // expect(balanceAfterDilute1User1).to.equal(75n * ETHER); // 75% of 100
-                // expect(balanceAfterDilute1User2).to.equal(150n * ETHER); // 75% of 200
-    
-                // // Check beneficiary balances increased correctly
-                // const balanceReinsertPotAfterDilute1 = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
-                // const balanceDAOAfterDilute1 = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
-                // expect(balanceReinsertPotAfterDilute1 - initialBalanceReinsertPot).to.equal(37n * ETHER + 500n * (ETHER / 1000n)); // (25% of 300) / 2
-                // expect(balanceDAOAfterDilute1 - initialBalanceDAO).to.equal(37n * ETHER + 500n * (ETHER / 1000n)); // (25% of 300) / 2
-    
-                // // Try to dilute1 again - should fail
-                // await expect(claimContract.dilute1()).to.be.revertedWith("dilute1 event did already happen!");
-    
-                // // Fast forward time to second dilution period
-                // await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY)]);
-                // await ethers.provider.send("evm_mine", []);
-    
-                // // Trigger second dilution
-                // const tx2 = await claimContract.dilute2();
-                // const receipt2 = await tx2.wait();
-                // expect(receipt2.status).to.equal(1);
-    
+                
+                
                 // // Check balances after second dilution
                 // const balanceAfterDilute2User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
                 // const balanceAfterDilute2User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
