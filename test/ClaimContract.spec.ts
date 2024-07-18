@@ -485,9 +485,7 @@ describe('ClaimContract', () => {
             it("should dilute balances and pay out correctly", async function () {
     
                 [sponsor] = await ethers.getSigners();
-    
                 let testBalances = getTestBalances_dillution();
-    
                 claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
 
                 let sol = new CryptoSol(claimContract);
@@ -556,25 +554,64 @@ describe('ClaimContract', () => {
                 const remainingBalanceToClaimAfterEarly = getRemainingBalance([claimersMid, claimersLate, claimersNever]);
 
                 // 25% of the balances that have not been claimed should go to the pots.
-                let expectedTotalPotBalances = remainingBalanceToClaimAfterEarly / BigInt(4);
+                let expectedTotalPotBalances1 = remainingBalanceToClaimAfterEarly / BigInt(4);
 
                 // hint: because 1 can not be divided by 2, this test wont work with Odd Numbers.
-                let expectedDaoBalance = expectedTotalPotBalances / BigInt(2);
-                let expectedReinsertPotBalance = expectedTotalPotBalances / BigInt(2);
+                let expectedDaoBalance1 = expectedTotalPotBalances1 / BigInt(2);
+                let expectedReinsertPotBalance1 = expectedTotalPotBalances1 / BigInt(2);
 
-                expect(expectedDaoBalance).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
-                expect(expectedReinsertPotBalance).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+                // we can calculate expectations for dilute events already here.
+                
+                // at the second event, it is 50%. 
+                // 25% already got claimed,
+                // so it is another 25%, and we have to divide 4 again.
+                let expectedDilution2 = getRemainingBalance([claimersLate, claimersNever]) / BigInt(4);
+                let expectedDaoBalance2 = expectedDaoBalance1 + expectedDilution2 / BigInt(2);
+                let expectedReinsertPotBalance2 = expectedReinsertPotBalance1 + expectedDilution2 / BigInt(2);
 
+                // at the third event, 100% will get diluted.
+                // since 25% + 25% of the funds already got diluted,
+                // the expected dilution value is 50% of the rest of the coins. 
+                let expectedDilution3 = getRemainingBalance([claimersNever]) / BigInt(2);
+                let expectedDaoBalance3 = expectedDaoBalance2 + expectedDilution3 / BigInt(2);
+                let expectedReinsertPotBalance3 = expectedReinsertPotBalance2 + expectedDilution3 / BigInt(2);
+
+                // expectedDaoBalance1
+                expect(expectedDaoBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+                
                 await claimPreconfiguredBalance(claimersMid);
 
                 let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
                 
                 // claimer receive 75%.
-                let expectedBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
-                expect(claimerBalanceMid).to.be.equal(expectedBalanceMid);
+                let expectedClaimerBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
+                expect(claimerBalanceMid).to.be.equal(expectedClaimerBalanceMid);
 
+                // Fast forward time to after second dilution period.
+                await helpers.time.increaseTo((await claimContract.dilute_s2_50_timestamp()) + BigInt(1));
+
+
+                // another 25% of the funds got diluted.
+                await claimContract.dilute2();
+
+                // check the balances of the DAO and reinsert contracts.
+                expect(expectedDaoBalance2).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance2).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+
+                await helpers.time.increaseTo((await claimContract.dilute_s3_0_timestamp()) + BigInt(1));
+
+                await claimPreconfiguredBalance(claimersLate);
+
+                // the remaining 50% of the funds get diluted.
+                await claimContract.dilute3();
+
+
+                // check the balances of the DAO and reinsert contracts.
+                expect(expectedDaoBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
                 
-                
+
                 // // Check balances after second dilution
                 // const balanceAfterDilute2User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
                 // const balanceAfterDilute2User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
