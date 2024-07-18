@@ -346,8 +346,6 @@ contract ClaimContract {
             return (3, 4);
         } else if (!dilution_s3_0_executed) {
             return (2, 4);
-        } else {
-            return (0, 4);
         }
     }
 
