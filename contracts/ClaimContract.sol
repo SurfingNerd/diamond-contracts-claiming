@@ -50,6 +50,15 @@ contract ClaimContract {
     /// the prefix is part of the signed message .
     bytes public prefixStr;
 
+    /// @dev dilute event did already happen.
+    error DiluteAllreadyHappened();
+
+    /// @dev dilute events need to get execute in the correct order.
+    error PredecessorDiluteEventNotHappened();
+
+    /// @dev dilute event can only get called after the treshold timestamp is reached. 
+    error DiluteTimeNotReached();
+    
     event Claim(
         bytes20 indexed _from,
         address _to,
@@ -181,11 +190,11 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute1() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp1(),
-            "dilute1 can only get called after the treshold timestamp got reached."
-        );
-        require(dilution_s1_75_executed == false, "dilute1 event already happened!");
+        if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
+        
+        if (dilution_s1_75_executed) {
+            revert DiluteAllreadyHappened();
+        }
 
         dilution_s1_75_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
@@ -203,16 +212,11 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute2() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp2(),
-            "dilute2 can only get called after the treshold timestamp got reached."
-        );
-        require(
-            dilution_s1_75_executed == true,
-            "dilute2 can't get processed unless dilute1 has already been processed."
-        );
-        require(dilution_s2_50_executed == false, "dilute2 event did already happen!");
 
+        if (block.timestamp < getDilutionTimestamp2()) revert DiluteTimeNotReached();
+        if (!dilution_s1_75_executed) revert PredecessorDiluteEventNotHappened();
+        if (dilution_s2_50_executed) revert DiluteAllreadyHappened();
+        
         dilution_s2_50_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
 
@@ -235,28 +239,14 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute3() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp3(),
-            "dilute3 can only get called after the treshold timestamp got reached."
-        );
-        require(
-            dilution_s1_75_executed == true,
-            "dilute3 can't get processed unless dilute1 has already been processed."
-        );
-        require(
-            dilution_s2_50_executed == true,
-            "dilute3 can't get processed unless dilute2 has already been processed."
-        );
-        require(dilution_s3_0_executed == false, "dilute3 event did already happen!");
+        if (block.timestamp < getDilutionTimestamp3()) revert DiluteTimeNotReached();
+        if (!dilution_s2_50_executed) revert PredecessorDiluteEventNotHappened();
+        if (dilution_s3_0_executed) revert DiluteAllreadyHappened();
 
-        dilution_s1_75_executed = true;
-        // in dilute 1: after 3 months 25% of the total coins get diluted.
-
+        dilution_s3_0_executed = true;
+        
         uint256 totalBalance = (payable(address(this))).balance;
-
-        // 50% got already diluted. this is the last phase, we dilute the rest.
         _sendDilutedAmounts(totalBalance);
-
         return totalBalance;
     }
 

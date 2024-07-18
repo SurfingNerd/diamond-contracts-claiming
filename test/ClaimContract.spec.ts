@@ -494,8 +494,9 @@ describe('ClaimContract', () => {
                 totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
 
                 // Try to dilute before first dilution period - should fail
-                await expect(claimContract.dilute1()).to.be.revertedWith(
-                    "dilute1 can only get called after the treshold timestamp got reached."
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(
+                    claimContract,
+                    "DiluteTimeNotReached"
                 );
 
                 let now = await claimContract.deploymentTimestamp();
@@ -523,9 +524,9 @@ describe('ClaimContract', () => {
                 await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
 
                 // we can not execute any of the dillution functions, because not enough time passed by.
-                await expect(claimContract.dilute1()).to.be.rejectedWith("dilute1 can only get called after the treshold timestamp got reached.");
-                await expect(claimContract.dilute2()).to.be.rejectedWith("dilute2 can only get called after the treshold timestamp got reached.");
-                await expect(claimContract.dilute3()).to.be.rejectedWith("dilute3 can only get called after the treshold timestamp got reached.");
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
 
                 // Fast forward time to after first dilution period.
                 await helpers.time.increaseTo((await claimContract.dilute_s1_75_timestamp()) + BigInt(1));
@@ -535,11 +536,11 @@ describe('ClaimContract', () => {
                 await claimContract.dilute1();
 
                 // but it is only able to be triggered once
-                await expect(claimContract.dilute1()).to.be.rejectedWith("dilute1 event already happened!");
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
 
                 // dilute 2 + 3 are still not triggerable.
-                await expect(claimContract.dilute2()).to.be.rejectedWith("dilute2 can only get called after the treshold timestamp got reached.");
-                await expect(claimContract.dilute3()).to.be.rejectedWith("dilute3 can only get called after the treshold timestamp got reached.");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract,"DiluteTimeNotReached");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
 
 
                 // dilute1() pays out not claimed coins to the DAO and the reinsert pot.
@@ -611,38 +612,11 @@ describe('ClaimContract', () => {
                 expect(expectedDaoBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
                 expect(expectedReinsertPotBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
                 
-
-                // // Check balances after second dilution
-                // const balanceAfterDilute2User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
-                // const balanceAfterDilute2User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
-                // expect(balanceAfterDilute2User1).to.equal(50n * ETHER); // 50% of 100
-                // expect(balanceAfterDilute2User2).to.equal(100n * ETHER); // 50% of 200
-    
-                // // Fast forward time to third dilution period
-                // await ethers.provider.send("evm_increaseTime", [Number(ONE_DAY)]);
-                // await ethers.provider.send("evm_mine", []);
-    
-                // // Trigger third dilution
-                // const tx3 = await claimContract.dilute3();
-                // const receipt3 = await tx3.wait();
-                // expect(receipt3.status).to.equal(1);
-    
-                // // Check balances after third dilution
-                // const balanceAfterDilute3User1 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user1.address, 20)));
-                // const balanceAfterDilute3User2 = BigInt(await claimContract.balances(ethers.utils.hexZeroPad(user2.address, 20)));
-                // expect(balanceAfterDilute3User1).to.equal(0n); // 0% of 100
-                // expect(balanceAfterDilute3User2).to.equal(0n); // 0% of 200
-    
-                // // Check final beneficiary balances
-                // const finalBalanceReinsertPot = BigInt(await ethers.provider.getBalance(beneficorReinsertPot.address));
-                // const finalBalanceDAO = BigInt(await ethers.provider.getBalance(beneficorDAO.address));
-                // expect(finalBalanceReinsertPot - initialBalanceReinsertPot).to.equal(150n * ETHER); // Half of total initial balance
-                // expect(finalBalanceDAO - initialBalanceDAO).to.equal(150n * ETHER); // Half of total initial balance
-    
-                // // Try to dilute after all dilutions - should fail
-                // await expect(claimContract.dilute1()).to.be.revertedWith("dilute1 event did already happen!");
-                // await expect(claimContract.dilute2()).to.be.revertedWith("dilute2 event did already happen!");
-                // await expect(claimContract.dilute3()).to.be.revertedWith("dilute3 event did already happen!");
+                // Try to dilute after all dilutions - should still fail, there most not be any reset.
+                // NOTE: if someone sends coin to that contract, this funds will be lost.
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
             });
         });
     
