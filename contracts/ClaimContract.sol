@@ -58,6 +58,10 @@ contract ClaimContract {
 
     /// @dev dilute event can only get called after the treshold timestamp is reached. 
     error DiluteTimeNotReached();
+
+    /// @dev contract dilute event can only get called after the treshold timestamp is reached.
+    /// @param timestampNumber index 1 based number wich dilution timstamp is causing the problem (1,2 or 3)? 
+    error InitializationDiluteTimestampError(uint8 timestampNumber);
     
     event Claim(
         bytes20 indexed _from,
@@ -84,24 +88,16 @@ contract ClaimContract {
             "Beneficor Address DAO must not be 0x0"
         );
 
+
+        if (_dilute_s1_75_timestamp <= block.timestamp) revert InitializationDiluteTimestampError(1);
+        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp) revert InitializationDiluteTimestampError(2);
+        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp) revert  InitializationDiluteTimestampError(3);
+
         lateClaimBeneficorAddressReinsertPot = _lateClaimBeneficorAddressReinsertPot;
         lateClaimBeneficorAddressDAO = _lateClaimBeneficorAddressDAO;
 
         prefixStr = _prefixStr;
         deploymentTimestamp = block.timestamp;
-
-        require(
-            _dilute_s1_75_timestamp > block.timestamp,
-            "dilute_s1_75_timestamp must be in future"
-        );
-        require(
-            _dilute_s2_50_timestamp > _dilute_s1_75_timestamp,
-            "dilute_s2_50_timestamp must be greater than dilute_s1_75_timestamp"
-        );
-        require(
-            _dilute_s3_0_timestamp > _dilute_s2_50_timestamp,
-            "dilute_s3_0_timestamp must be greater than dilute_s2_50_timestamp"
-        );
 
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;

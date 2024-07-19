@@ -144,6 +144,48 @@ describe('ClaimContract', () => {
 
             expect(await contract.waitForDeployment());
         });
+
+        it('should not deploy with messed up dillute timestamps', async () => {
+            const contractFactory = await ethers.getContractFactory("ClaimContract");
+
+            // get current timestamp:
+            // dillute1 =  deploymentTimestamp + (1 days * 2 * 31) + 1 days * 30;
+            // dillute2 =  deploymentTimestamp + (1 days * 3 * 31) + (1 days * 3 * 30);
+            // dillute3 =  deploymentTimestamp + (YEAR_IN_SECONDS * 4) + LEAP_YEAR_IN_SECONDS;
+
+            let dilluteTimestamps = getDilluteTimestamps();
+
+
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                '0x0',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute3                
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute3                
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute3,
+                dilluteTimestamps.dillute2
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+
+        });
     });
 
     describe("cryptographics", () => {
