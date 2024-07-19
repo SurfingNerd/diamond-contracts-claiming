@@ -59,9 +59,21 @@ contract ClaimContract {
     /// @dev dilute event can only get called after the treshold timestamp is reached. 
     error DiluteTimeNotReached();
 
-    /// @dev contract dilute event can only get called after the treshold timestamp is reached.
-    /// @param timestampNumber index 1 based number wich dilution timstamp is causing the problem (1,2 or 3)? 
-    error InitializationDiluteTimestampError(uint8 timestampNumber);
+    /// @dev constructor argument error: first dilution event must be in the future. 
+    error InitializationErrorDiluteTimestamp1();
+    
+    /// @dev constructor argument error: second dilution event must be after the first.
+    error InitializationErrorDiluteTimestamp2();
+
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorDiluteTimestamp3();
+    
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorDaoAddressNull();
+    
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorReinsertPotAddressNull();
+    
     
     event Claim(
         bytes20 indexed _from,
@@ -79,19 +91,11 @@ contract ClaimContract {
         uint256 _dilute_s2_50_timestamp,
         uint256 _dilute_s3_0_timestamp
     ) {
-        require(
-            _lateClaimBeneficorAddressReinsertPot != address(0),
-            "Beneficor Address Reinsert Pot must not be 0x0"
-        );
-        require(
-            _lateClaimBeneficorAddressDAO != address(0),
-            "Beneficor Address DAO must not be 0x0"
-        );
-
-
-        if (_dilute_s1_75_timestamp <= block.timestamp) revert InitializationDiluteTimestampError(1);
-        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp) revert InitializationDiluteTimestampError(2);
-        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp) revert  InitializationDiluteTimestampError(3);
+        if (_lateClaimBeneficorAddressReinsertPot == address(0)) revert InitializationErrorReinsertPotAddressNull();
+        if (_lateClaimBeneficorAddressDAO == address(0)) revert InitializationErrorDaoAddressNull();
+        if (_dilute_s1_75_timestamp <= block.timestamp) revert InitializationErrorDiluteTimestamp1();
+        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp) revert InitializationErrorDiluteTimestamp2();
+        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp) revert  InitializationErrorDiluteTimestamp3();
 
         lateClaimBeneficorAddressReinsertPot = _lateClaimBeneficorAddressReinsertPot;
         lateClaimBeneficorAddressDAO = _lateClaimBeneficorAddressDAO;

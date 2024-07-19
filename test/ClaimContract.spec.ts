@@ -104,24 +104,7 @@ describe('ClaimContract', () => {
     });
 
     describe("deployment", () => {
-        it('should revert deploy with beneficor address = 0x0', async () => {
-            const contractFactory = await ethers.getContractFactory("ClaimContract");
-
-
-            let dilluteTimestamps = getDilluteTimestamps();
-            await expect(
-                contractFactory.deploy(ethers.ZeroAddress, lateClaimBeneficorDAO, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
-            ).to.be.revertedWith("Beneficor Address Reinsert Pot must not be 0x0");
-        });
-
-        it('should revert deploy with beneficior DAO address = 0x0', async () => {
-            const contractFactory = await ethers.getContractFactory("ClaimContract");
-            let dilluteTimestamps = getDilluteTimestamps();
-            await expect(
-                contractFactory.deploy(lateClaimBeneficorAddress, ethers.ZeroAddress, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
-            ).to.be.revertedWith("Beneficor Address DAO must not be 0x0");
-        });
-
+       
         it('should deploy contract', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
@@ -145,7 +128,7 @@ describe('ClaimContract', () => {
             expect(await contract.waitForDeployment());
         });
 
-        it('should not deploy with messed up dillute timestamps', async () => {
+        it('should not deploy with wrong constructor arguments', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
             // get current timestamp:
@@ -155,36 +138,51 @@ describe('ClaimContract', () => {
 
             let dilluteTimestamps = getDilluteTimestamps();
 
-
-
             await expect(contractFactory.deploy(
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
                 '0x',
-                '0x0',
+                '0x0', // <-- First timestamp in the past.
                 dilluteTimestamps.dillute1,
                 dilluteTimestamps.dillute3                
-            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp1");
 
             await expect(contractFactory.deploy(
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
                 '0x',
                 dilluteTimestamps.dillute2,
-                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute1, // <-- wrong order
                 dilluteTimestamps.dillute3                
-            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp2");
 
 
             await expect(contractFactory.deploy(
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
                 '0x',
-                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute1, 
                 dilluteTimestamps.dillute3,
-                dilluteTimestamps.dillute2
-            )).to.be.revertedWithCustomError(contractFactory, "InitializationDiluteTimestampError");
+                dilluteTimestamps.dillute2 // <-- wrong order
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp3");
 
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                ethers.ZeroAddress, // <-- DaoAddress Zero
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute3
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDaoAddressNull");
+
+            await expect(contractFactory.deploy(
+                ethers.ZeroAddress, // <-- Reinsert Pot Zero 
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute3
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorReinsertPotAddressNull");
         });
     });
 
