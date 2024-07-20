@@ -74,7 +74,15 @@ contract ClaimContract {
     /// @dev constructor argument error: third dilution event must be after the second.
     error InitializationErrorReinsertPotAddressNull();
     
-    
+    /// @dev Fill Error: The Claim contract is already filled and cannot get filled a second time.
+    error FillErrorBalanceDoubleFill();
+
+    /// @dev Fill Error: There must be a value transfered to the ClaimContract.
+    error FillErrorValueRequired();
+
+    /// @dev Fill Error: number of accounts need to match number of balances.
+    error FillErrorNumberOfAccountsMissmatch(); 
+
     event Claim(
         bytes20 indexed _from,
         address _to,
@@ -110,15 +118,9 @@ contract ClaimContract {
 
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         //for simplification we only support a one-shot initialisation.
-        require(
-            address(this).balance == msg.value,
-            "The Claim contract is already filled and cannot get filled a second time."
-        );
-        require(msg.value > 0, "there must be a value to fill up the ClaimContract");
-        require(
-            _accounts.length == _balances.length,
-            "number of accounts need to match number of balances."
-        );
+        if (address(this).balance != msg.value) revert FillErrorBalanceDoubleFill();
+        if (msg.value == 0) revert FillErrorValueRequired();
+        if (_accounts.length != _balances.length) revert FillErrorNumberOfAccountsMissmatch();
 
         // we verify if the transfered amount that get added to the sum up to the total amount added.
         uint256 totalBalanceAdded = 0;
