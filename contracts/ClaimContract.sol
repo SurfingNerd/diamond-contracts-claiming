@@ -50,6 +50,39 @@ contract ClaimContract {
     /// the prefix is part of the signed message .
     bytes public prefixStr;
 
+    /// @dev dilute event did already happen.
+    error DiluteAllreadyHappened();
+
+    /// @dev dilute events need to get execute in the correct order.
+    error PredecessorDiluteEventNotHappened();
+
+    /// @dev dilute event can only get called after the treshold timestamp is reached. 
+    error DiluteTimeNotReached();
+
+    /// @dev constructor argument error: first dilution event must be in the future. 
+    error InitializationErrorDiluteTimestamp1();
+    
+    /// @dev constructor argument error: second dilution event must be after the first.
+    error InitializationErrorDiluteTimestamp2();
+
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorDiluteTimestamp3();
+    
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorDaoAddressNull();
+    
+    /// @dev constructor argument error: third dilution event must be after the second.
+    error InitializationErrorReinsertPotAddressNull();
+    
+    /// @dev Fill Error: The Claim contract is already filled and cannot get filled a second time.
+    error FillErrorBalanceDoubleFill();
+
+    /// @dev Fill Error: There must be a value transfered to the ClaimContract.
+    error FillErrorValueRequired();
+
+    /// @dev Fill Error: number of accounts need to match number of balances.
+    error FillErrorNumberOfAccountsMissmatch(); 
+
     event Claim(
         bytes20 indexed _from,
         address _to,
@@ -66,24 +99,17 @@ contract ClaimContract {
         uint256 _dilute_s2_50_timestamp,
         uint256 _dilute_s3_0_timestamp
     ) {
-        require(
-            _lateClaimBeneficorAddressReinsertPot != address(0),
-            "Beneficor Address Reinsert Pot must not be 0x0"
-        );
-        require(
-            _lateClaimBeneficorAddressDAO != address(0),
-            "Beneficor Address DAO must not be 0x0"
-        );
+        if (_lateClaimBeneficorAddressReinsertPot == address(0)) revert InitializationErrorReinsertPotAddressNull();
+        if (_lateClaimBeneficorAddressDAO == address(0)) revert InitializationErrorDaoAddressNull();
+        if (_dilute_s1_75_timestamp <= block.timestamp) revert InitializationErrorDiluteTimestamp1();
+        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp) revert InitializationErrorDiluteTimestamp2();
+        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp) revert  InitializationErrorDiluteTimestamp3();
 
         lateClaimBeneficorAddressReinsertPot = _lateClaimBeneficorAddressReinsertPot;
         lateClaimBeneficorAddressDAO = _lateClaimBeneficorAddressDAO;
 
         prefixStr = _prefixStr;
         deploymentTimestamp = block.timestamp;
-
-        require(_dilute_s1_75_timestamp > block.timestamp, "dilute_s1_75_timestamp must be in future");
-        require(_dilute_s2_50_timestamp > _dilute_s1_75_timestamp, "dilute_s2_50_timestamp must be greater than dilute_s1_75_timestamp");
-        require(_dilute_s3_0_timestamp > _dilute_s2_50_timestamp, "dilute_s3_0_timestamp must be greater than dilute_s2_50_timestamp");
 
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
@@ -92,15 +118,9 @@ contract ClaimContract {
 
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         //for simplification we only support a one-shot initialisation.
-        require(
-            address(this).balance == msg.value,
-            "The Claim contract is already filled and cannot get filled a second time."
-        );
-        require(msg.value > 0, "there must be a value to fill up the ClaimContract");
-        require(
-            _accounts.length == _balances.length,
-            "number of accounts need to match number of balances."
-        );
+        if (address(this).balance != msg.value) revert FillErrorBalanceDoubleFill();
+        if (msg.value == 0) revert FillErrorValueRequired();
+        if (_accounts.length != _balances.length) revert FillErrorNumberOfAccountsMissmatch();
 
         // we verify if the transfered amount that get added to the sum up to the total amount added.
         uint256 totalBalanceAdded = 0;
@@ -132,10 +152,7 @@ contract ClaimContract {
         bytes32 _s
     ) external {
         //retrieve the oldAddress out of public key.
-        bytes20 oldAddress = publicKeyToBitcoinAddress(
-            _pubKeyX,
-            _pubKeyY
-        );
+        bytes20 oldAddress = publicKeyToBitcoinAddress(_pubKeyX, _pubKeyY);
 
         //if already claimed, it just returns.
         uint256 currentBalance = balances[oldAddress];
@@ -143,15 +160,7 @@ contract ClaimContract {
 
         // verify if the signature matches to the provided pubKey here.
         require(
-            claimMessageMatchesSignature(
-                _targetAdress,
-                _postfix,
-                _pubKeyX,
-                _pubKeyY,
-                _v,
-                _r,
-                _s
-            ),
+            claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s),
             "Signature does not match for this claiming procedure."
         );
 
@@ -183,11 +192,11 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute1() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp1(),
-            "dilute1 can only get called after the treshold timestamp got reached."
-        );
-        require(dilution_s1_75_executed == false, "dilute1 event did already happen!");
+        if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
+        
+        if (dilution_s1_75_executed) {
+            revert DiluteAllreadyHappened();
+        }
 
         dilution_s1_75_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
@@ -205,16 +214,11 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute2() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp2(),
-            "dilute2 can only get called after the treshold timestamp got reached."
-        );
-        require(
-            dilution_s1_75_executed == true,
-            "dilute2 can't get processed unless dilute1 has already been processed."
-        );
-        require(dilution_s2_50_executed == false, "dilute2 event did already happen!");
 
+        if (block.timestamp < getDilutionTimestamp2()) revert DiluteTimeNotReached();
+        if (!dilution_s1_75_executed) revert PredecessorDiluteEventNotHappened();
+        if (dilution_s2_50_executed) revert DiluteAllreadyHappened();
+        
         dilution_s2_50_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
 
@@ -237,28 +241,14 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute3() external returns (uint256) {
-        require(
-            block.timestamp > getDilutionTimestamp3(),
-            "dilute3 can only get called after the treshold timestamp got reached."
-        );
-        require(
-            dilution_s1_75_executed == true,
-            "dilute3 can't get processed unless dilute1 has already been processed."
-        );
-        require(
-            dilution_s2_50_executed == true,
-            "dilute3 can't get processed unless dilute2 has already been processed."
-        );
-        require(dilution_s3_0_executed == false, "dilute3 event did already happen!");
+        if (block.timestamp < getDilutionTimestamp3()) revert DiluteTimeNotReached();
+        if (!dilution_s2_50_executed) revert PredecessorDiluteEventNotHappened();
+        if (dilution_s3_0_executed) revert DiluteAllreadyHappened();
 
-        dilution_s1_75_executed = true;
-        // in dilute 1: after 3 months 25% of the total coins get diluted.
-
+        dilution_s3_0_executed = true;
+        
         uint256 totalBalance = (payable(address(this))).balance;
-
-        // 50% got already diluted. this is the last phase, we dilute the rest.
         _sendDilutedAmounts(totalBalance);
-
         return totalBalance;
     }
 
@@ -313,7 +303,7 @@ contract ClaimContract {
         /*
           ecrecover() returns an Eth address rather than a public key, so
           we must do the same to compare.
-      */
+        */
         address pubKeyEthAddr = pubKeyToEthAddress(_pubKeyX, _pubKeyY);
 
         //we need to check if X and Y corresponds to R and S.
@@ -348,8 +338,6 @@ contract ClaimContract {
             return (3, 4);
         } else if (!dilution_s3_0_executed) {
             return (2, 4);
-        } else {
-            return (0, 4);
         }
     }
 
@@ -361,9 +349,14 @@ contract ClaimContract {
         bytes32 _publicKeyX,
         bytes32 _publicKeyY
     ) public pure returns (bytes20 rawBtcAddress) {
-        return ripemd160(
-            abi.encodePacked(sha256(abi.encodePacked((uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03, _publicKeyX)))
-        );
+        return
+            ripemd160(
+                abi.encodePacked(
+                    sha256(
+                        abi.encodePacked((uint256(_publicKeyY) & 1) == 0 ? 0x02 : 0x03, _publicKeyX)
+                    )
+                )
+            );
     }
 
     /**
@@ -392,9 +385,7 @@ contract ClaimContract {
      * @param _addr address
      * @return addrStr ethereum address(24 byte)
      */
-    function calculateAddressString(
-        address _addr
-    ) public pure returns (bytes memory addrStr) {
+    function calculateAddressString(address _addr) public pure returns (bytes memory addrStr) {
         bytes memory tmp = new bytes(ETH_ADDRESS_HEX_LEN);
         _hexStringFromData(tmp, bytes32(bytes20(_addr)), 0, ETH_ADDRESS_BYTE_LEN);
 
@@ -407,7 +398,7 @@ contract ClaimContract {
             _addressStringChecksumChar(tmp, offset++, b >> 4);
             _addressStringChecksumChar(tmp, offset++, b & 0x0f);
         }
-    
+
         // the correct checksum is now in the tmp variable.
         // we extend this by the Ethereum usual prefix 0x
 

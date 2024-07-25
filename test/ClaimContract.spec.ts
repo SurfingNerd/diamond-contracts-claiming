@@ -5,20 +5,15 @@ import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 
 import EC from "elliptic";
 import BN from "bn.js";
-import bitcoinMessage from "bitcoinjs-message";
-
-import ECPairFactory from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 
 import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { TestBalances, getTestBalances, getTestBalances_DMD, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix } from "./fixtures/balances";
+import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
+import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
 
-
-const ECPair = ECPairFactory(ecc);
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
@@ -43,9 +38,10 @@ describe('ClaimContract', () => {
         let prefixHex = stringToUTF8Hex(prefix);
 
         const claimContract = await contractFactory.deploy(claimBeneficorAddress, beneficorDAOAddress, prefixHex, dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3);
-
         await claimContract.waitForDeployment();
-        return claimContract;
+
+        // why we need to bypass type checks here ?
+        return (claimContract as any) as ClaimContract;
     }
 
     async function deployFixtureWithNoPrefix(): Promise<{ claimContract: ClaimContract }> {
@@ -53,14 +49,14 @@ describe('ClaimContract', () => {
     }
 
     async function deployFixture(prefixHex: string): Promise<{ claimContract: ClaimContract }> {
-        const claimContractAny: any = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
-        const claimContract = claimContractAny as ClaimContract;
-        return { claimContract }
+
+        let claimContract = await deployClaiming(lateClaimBeneficorAddress, lateClaimBeneficorDAO, prefixHex);
+        return { claimContract };
     }
 
     async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
-        
-        
+
+
         const prefixBytes = await claimContract.prefixStr();
         const prefixBuffer = hexToBuf(prefixBytes);
 
@@ -97,31 +93,18 @@ describe('ClaimContract', () => {
     before(async () => {
         signers = await ethers.getSigners();
 
-        lateClaimBeneficorAddress = signers[0].address;
-        lateClaimBeneficorDAO = signers[1].address;
+        // this 2 address will are contracts addresses in Diamond.
+        // this ClaimingContract contract only fills those 2 addresses.
+        // the example address are also the address the deployment of the DAO and the Core contract will happen on the real network.
+
+        lateClaimBeneficorAddress = "0x2000000000000000000000000000000000000001";
+        lateClaimBeneficorDAO = "0xDA0da0da0Da0Da0Da0DA00DA0da0da0DA0DA0dA0";
 
         cryptoJS = new CryptoJS();
     });
 
     describe("deployment", () => {
-        it('should revert deploy with beneficor address = 0x0', async () => {
-            const contractFactory = await ethers.getContractFactory("ClaimContract");
-
-
-            let dilluteTimestamps = getDilluteTimestamps();
-            await expect(
-                contractFactory.deploy(ethers.ZeroAddress, lateClaimBeneficorDAO, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
-            ).to.be.revertedWith("Beneficor Address Reinsert Pot must not be 0x0");
-        });
-
-        it('should revert deploy with beneficior DAO address = 0x0', async () => {
-            const contractFactory = await ethers.getContractFactory("ClaimContract");
-            let dilluteTimestamps = getDilluteTimestamps();
-            await expect(
-                contractFactory.deploy(lateClaimBeneficorAddress, ethers.ZeroAddress, '0x', dilluteTimestamps.dillute1, dilluteTimestamps.dillute2, dilluteTimestamps.dillute3)
-            ).to.be.revertedWith("Beneficor Address DAO must not be 0x0");
-        });
-
+       
         it('should deploy contract', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
@@ -143,6 +126,63 @@ describe('ClaimContract', () => {
 
 
             expect(await contract.waitForDeployment());
+        });
+
+        it('should not deploy with wrong constructor arguments', async () => {
+            const contractFactory = await ethers.getContractFactory("ClaimContract");
+
+            // get current timestamp:
+            // dillute1 =  deploymentTimestamp + (1 days * 2 * 31) + 1 days * 30;
+            // dillute2 =  deploymentTimestamp + (1 days * 3 * 31) + (1 days * 3 * 30);
+            // dillute3 =  deploymentTimestamp + (YEAR_IN_SECONDS * 4) + LEAP_YEAR_IN_SECONDS;
+
+            let dilluteTimestamps = getDilluteTimestamps();
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                '0x0', // <-- First timestamp in the past.
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute3                
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp1");
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute1, // <-- wrong order
+                dilluteTimestamps.dillute3                
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp2");
+
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute1, 
+                dilluteTimestamps.dillute3,
+                dilluteTimestamps.dillute2 // <-- wrong order
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp3");
+
+            await expect(contractFactory.deploy(
+                lateClaimBeneficorAddress,
+                ethers.ZeroAddress, // <-- DaoAddress Zero
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute3
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDaoAddressNull");
+
+            await expect(contractFactory.deploy(
+                ethers.ZeroAddress, // <-- Reinsert Pot Zero 
+                lateClaimBeneficorDAO,
+                '0x',
+                dilluteTimestamps.dillute1,
+                dilluteTimestamps.dillute2,
+                dilluteTimestamps.dillute3
+            )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorReinsertPotAddressNull");
         });
     });
 
@@ -292,58 +332,7 @@ describe('ClaimContract', () => {
             }
         });
 
-        // it('should match recovered address with expected Etherem/Bitcoin pseudo address', async () => {
-        //     const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-        //     // same test as previous
-        //     // But with multi signatures of the same key.
-        //     // in order to cover different signatures variations,
-        //     // like short S and short R
-
-        //     // with this tool, we can create a Bitcoin address from a passphrase,
-        //     // also knowing X and Y.
-
-        //     // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
-        //     // passphrase: bit.diamonds
-
-        //     // and with this tool we can create the equivalent Ethereum Address,
-        //     // with the same X and Y then the Bitcoin ist.
-
-        //     // https://www.royalfork.org/2017/12/10/eth-graphical-address/
-        //     // passphrase: bit.diamonds
-
-        //     const expectedEthAddress = '0xA5956975DE8711DFcc82DE5f8F5d151c41556656';
-        //     const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
-
-        //     // there for we can make a EC Recover on a bitcoin signed message and
-        //     // compare it with the Ethereum Signed Message
-
-        //     const signaturesBase64 = getTestSignatures();
-
-        //     for (let index = 0; index < signaturesBase64.length; index++) {
-        //         const signatureBase64 = getTestSignatures()[0];
-        //         const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
-
-        //         const recoveredETHAddress = await claimContract.getEthAddressFromSignature(
-        //             message,
-        //             stringToUTF8Hex(''),
-        //             '0x1b',
-        //             ensure0x(rs.r),
-        //             ensure0x(rs.s),
-        //         );
-        //         const recoveredETHAddress2 = await claimContract.getEthAddressFromSignature(
-        //             message,
-        //             stringToUTF8Hex(''),
-        //             '0x1c',
-        //             ensure0x(rs.r),
-        //             ensure0x(rs.s)
-        //         );
-
-        //         expect(expectedEthAddress).to.be.oneOf([recoveredETHAddress, recoveredETHAddress2]);
-        //     }
-        // }).skip(); // .skip(); // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
-
-        async function runAddAndClaimTests(testSet: TestBalances) {
+        async function runAddAndClaimTests(testSet: ClaimingDataSet) {
 
             let deployFixtureSpecified = () => {
                 return deployFixture(testSet.messagePrefix);
@@ -377,13 +366,12 @@ describe('ClaimContract', () => {
             const claimToString = stringToUTF8Hex('claim to ');
 
             async function deployWithPrefixFixture(): Promise<{ claimContract: ClaimContract }> {
-                const claimContractUntyped: any = await deployClaiming(
+                const claimContract = await deployClaiming(
                     lateClaimBeneficorAddress,
                     lateClaimBeneficorDAO,
                     claimToString
                 );
 
-                const claimContract = claimContractUntyped as ClaimContract;
                 return { claimContract };
             }
 
@@ -430,22 +418,13 @@ describe('ClaimContract', () => {
                 const caller = signers[0];
                 const testbalances = getTestBalances();
 
-                let expectedTotalBalance = ethers.toBigInt('0');
+                let cryptoSol = new CryptoSol(claimContract);
 
-                let accounts: string[] = [];
-                let balances: string[] = [];
 
-                for (const balance of testbalances) {
-                    accounts.push(ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
-                    balances.push(balance.value);
-                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-                }
-
-                await claimContract.connect(caller).fill(accounts, balances, { value: expectedTotalBalance });
+                let expectedTotalBalance = await cryptoSol.fillBalances(claimContract, caller, testbalances);
 
                 const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-
 
                 for (const balance of testbalances) {
                     const currentBalance = await claimContract.balances(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
@@ -499,19 +478,6 @@ describe('ClaimContract', () => {
                         expect(x).to.equal(key.x, "Public key is not the same for all signatures.");
                         expect(y).to.equal(key.y, "Public key is not the same for all signatures.");
                     }
-
-
-
-                   // const essentialPart = await claimContract.publicKeyToBitcoinAddress(x, y, 1);
-                   // const bs58Result = cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress(
-                   //     essentialPart,
-                   //     '24'
-                   // );
-
-                   // console.log(balance.dmdv3Address);
-                   // console.log(bs58Result);
-
-                    //console.log(cryptoJS.publicKeyToBitcoinAddress(key.publicKey));
                 }
             });
 
@@ -542,5 +508,157 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
         });
+
+        describe("Dilution", function () {
+            let claimContract: ClaimContract;
+            let sponsor: SignerWithAddress;
+            let totalAmountInClaimingPot: bigint = BigInt(0);  
+    
+            //const ONE_DAY = 86400n;
+            //const ETHER = BigInt(10n ** 18n);
+    
+            beforeEach(async function () {
+
+                
+            });
+    
+            it("should dilute balances and pay out correctly", async function () {
+    
+                [sponsor] = await ethers.getSigners();
+                let testBalances = getTestBalances_dillution();
+                claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
+
+                let sol = new CryptoSol(claimContract);
+                // sol.setLogDebug(true);
+
+                totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
+
+                // Try to dilute before first dilution period - should fail
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(
+                    claimContract,
+                    "DiluteTimeNotReached"
+                );
+
+                let now = await claimContract.deploymentTimestamp();
+
+                let claimingBalances = getTestBalances_dillution();
+                const [claimersEarly, claimersMid, claimersLate, claimersNever] = claimingBalances.balances;
+
+                
+                let claimPreconfiguredBalance = async (balance: ClaimingBalance) => {
+                    // console.log("claiming:", balance);
+                    await sol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "");
+                }
+
+                await claimPreconfiguredBalance(claimersEarly);
+
+                // claiming all the coins that are expected to claim within first claiming period here.
+                // those will receive 100% of coins
+                // await sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "");
+
+                // does the early claimer have the exact amount of coins than he should have ?
+                let claimerBalanceEarly = await ethers.provider.getBalance(claimersEarly.dmdv4Address);
+                expect(claimerBalanceEarly).to.be.equal(BigInt(claimersEarly.value));
+
+                // a second claim must not be possible.
+                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
+
+                // we can not execute any of the dillution functions, because not enough time passed by.
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+
+                // Fast forward time to after first dilution period.
+                await helpers.time.increaseTo((await claimContract.dilute_s1_75_timestamp()) + BigInt(1));
+
+                // time has come, everybody can now call dilute1().
+                // a programmed service will wait for this event and trigger the execution.
+                await claimContract.dilute1();
+
+                // but it is only able to be triggered once
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+
+                // dilute 2 + 3 are still not triggerable.
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract,"DiluteTimeNotReached");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
+
+
+                // dilute1() pays out not claimed coins to the DAO and the reinsert pot.
+                // both will get 50% each.
+
+                // not payed out coins is the dilution factor of 25% of the total balance of all remaining claims.
+                
+                const getRemainingBalance = (notClaimedBalances: BalanceV3[]) => {
+                    return notClaimedBalances.map(b=> BigInt(b.value)).reduce((a,b) => a + b);
+                }
+
+                const remainingBalanceToClaimAfterEarly = getRemainingBalance([claimersMid, claimersLate, claimersNever]);
+
+                // 25% of the balances that have not been claimed should go to the pots.
+                let expectedTotalPotBalances1 = remainingBalanceToClaimAfterEarly / BigInt(4);
+
+                // hint: because 1 can not be divided by 2, this test wont work with Odd Numbers.
+                let expectedDaoBalance1 = expectedTotalPotBalances1 / BigInt(2);
+                let expectedReinsertPotBalance1 = expectedTotalPotBalances1 / BigInt(2);
+
+                // we can calculate expectations for dilute events already here.
+                
+                // at the second event, it is 50%. 
+                // 25% already got claimed,
+                // so it is another 25%, and we have to divide 4 again.
+                let expectedDilution2 = getRemainingBalance([claimersLate, claimersNever]) / BigInt(4);
+                let expectedDaoBalance2 = expectedDaoBalance1 + expectedDilution2 / BigInt(2);
+                let expectedReinsertPotBalance2 = expectedReinsertPotBalance1 + expectedDilution2 / BigInt(2);
+
+                // at the third event, 100% will get diluted.
+                // since 25% + 25% of the funds already got diluted,
+                // the expected dilution value is 50% of the rest of the coins. 
+                let expectedDilution3 = getRemainingBalance([claimersNever]) / BigInt(2);
+                let expectedDaoBalance3 = expectedDaoBalance2 + expectedDilution3 / BigInt(2);
+                let expectedReinsertPotBalance3 = expectedReinsertPotBalance2 + expectedDilution3 / BigInt(2);
+
+                // expectedDaoBalance1
+                expect(expectedDaoBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+                
+                await claimPreconfiguredBalance(claimersMid);
+
+                let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
+                
+                // claimer receive 75%.
+                let expectedClaimerBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
+                expect(claimerBalanceMid).to.be.equal(expectedClaimerBalanceMid);
+
+                // Fast forward time to after second dilution period.
+                await helpers.time.increaseTo((await claimContract.dilute_s2_50_timestamp()) + BigInt(1));
+
+
+                // another 25% of the funds got diluted.
+                await claimContract.dilute2();
+
+                // check the balances of the DAO and reinsert contracts.
+                expect(expectedDaoBalance2).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance2).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+
+                await helpers.time.increaseTo((await claimContract.dilute_s3_0_timestamp()) + BigInt(1));
+
+                await claimPreconfiguredBalance(claimersLate);
+
+                // the remaining 50% of the funds get diluted.
+                await claimContract.dilute3();
+
+
+                // check the balances of the DAO and reinsert contracts.
+                expect(expectedDaoBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
+                expect(expectedReinsertPotBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
+                
+                // Try to dilute after all dilutions - should still fail, there most not be any reset.
+                // NOTE: if someone sends coin to that contract, this funds will be lost.
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+            });
+        });
+    
     });
 });

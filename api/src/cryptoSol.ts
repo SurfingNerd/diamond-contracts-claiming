@@ -1,9 +1,10 @@
 import { ethers } from "hardhat";
 import { ClaimContract } from '../../typechain-types/index';
-import { ensure0x, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
+import { ensure0x, ensure0xb32, remove0x, stringToUTF8Hex, toHexString } from './cryptoHelpers';
 import { CryptoJS } from './cryptoJS';
 import { hexToBuf } from './cryptoHelpers';
-
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { BalanceV3 } from "../data/interfaces";
 
 let base58check = require('base58check'); 
 
@@ -42,12 +43,11 @@ export class CryptoSol {
 
     const rs = this.cryptoJS.signatureBase64ToRSV(signature);
 
-    let pubKeyX = ensure0x(pubkey.x);
-    let pubKeyY = ensure0x(pubkey.y);
+    let pubKeyX = ensure0xb32(pubkey.x);
+    let pubKeyY = ensure0xb32(pubkey.y);
 
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
-
     
     let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY);
 
@@ -138,5 +138,28 @@ export class CryptoSol {
     // get the balance of ths address.
 
     return await ethers.provider.getBalance(address);
+  }
+
+
+  public async fillBalances(claimContract: ClaimContract, sponsor: SignerWithAddress, balances: BalanceV3[]) {
+
+      let totalBalance = ethers.toBigInt('0');
+      let accounts: string[] = [];
+      let balancesForContract: string[] = [];
+
+      for (const balance of balances) {
+          accounts.push(ensure0x(this.cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address)));
+          balancesForContract.push(balance.value);
+          totalBalance = totalBalance + ethers.toBigInt(balance.value);
+      }
+
+      // console.log(accounts);
+      // console.log(balancesForContract);
+      // console.log(totalBalance);
+      await (await claimContract.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
+      
+      // console.log("result status", txResult?.status);
+      //console.log(await txResult?.getResult());
+      return totalBalance;
   }
 }
