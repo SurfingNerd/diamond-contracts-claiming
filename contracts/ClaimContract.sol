@@ -1,3 +1,4 @@
+
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
@@ -81,7 +82,20 @@ contract ClaimContract {
     error FillErrorValueRequired();
 
     /// @dev Fill Error: number of accounts need to match number of balances.
-    error FillErrorNumberOfAccountsMissmatch(); 
+    error FillErrorNumberOfAccountsMissmatch();
+
+    /// @dev Fill Error: number of accounts need to match number of balances.
+    error FillErrorAccountZero();
+
+    /// @dev Fill Error: cannot add account with Zero Balance.
+    error FillErrorBalanceZero();
+
+    /// @dev Fill Error: cannot add account with Zero Balance.
+    error FillErrorAccountAlreadyDefined();
+
+    /// @dev Fill Error: The payment for this function must be equal to the sum of all balances.
+    error FillErrorBalanceSumError();
+
 
     event Claim(
         bytes20 indexed _from,
@@ -126,20 +140,14 @@ contract ClaimContract {
         uint256 totalBalanceAdded = 0;
 
         for (uint256 i = 0; i < _accounts.length; ++i) {
-            require(_accounts[i] != bytes20(address(0)), "Account cannot be 0x0!");
-            require(_balances[i] != 0, "Balance cannot be 0!");
-            require(
-                balances[_accounts[i]] == 0,
-                "Balance is defined multiple times for an account."
-            );
+            if (_accounts[i] == bytes20(address(0))) revert FillErrorAccountZero();
+            if (_balances[i] == 0) revert FillErrorBalanceZero();
+            if (balances[_accounts[i]] != 0) revert FillErrorAccountAlreadyDefined(); 
             totalBalanceAdded += _balances[i];
             balances[_accounts[i]] = _balances[i];
         }
 
-        require(
-            msg.value == totalBalanceAdded,
-            "The payment for this function must be equal to the sum of all balances."
-        );
+        if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
     }
 
     function claim(
