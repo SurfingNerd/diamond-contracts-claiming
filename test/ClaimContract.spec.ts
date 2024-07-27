@@ -561,7 +561,7 @@ describe('ClaimContract', () => {
                 expect(claimerBalanceEarly).to.be.equal(BigInt(claimersEarly.value));
 
                 // a second claim must not be possible.
-                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
+                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWithCustomError(claimContract, "ClaimErrorNoBalance");
 
                 // we can not execute any of the dillution functions, because not enough time passed by.
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");

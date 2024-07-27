@@ -96,6 +96,11 @@ contract ClaimContract {
     /// @dev Fill Error: The payment for this function must be equal to the sum of all balances.
     error FillErrorBalanceSumError();
 
+    /// @dev Claim Error: provided address does not have a balance.
+    error ClaimErrorNoBalance();
+
+    /// @dev Claim Error: Signature does not match
+    error ClaimErrorSignatureMissmatch();
 
     event Claim(
         bytes20 indexed _from,
@@ -164,19 +169,12 @@ contract ClaimContract {
 
         //if already claimed, it just returns.
         uint256 currentBalance = balances[oldAddress];
-        require(currentBalance > 0, "provided address does not have a balance.");
+        if (currentBalance == 0) revert ClaimErrorNoBalance();
 
         // verify if the signature matches to the provided pubKey here.
-        require(
-            claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s),
-            "Signature does not match for this claiming procedure."
-        );
+        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s)) revert ClaimErrorSignatureMissmatch();
 
         (uint256 nominator, uint256 denominator) = getCurrentDilutedClaimFactor();
-
-        // the nominator is 0 if the claim period passed.
-        require(nominator > 0, "claiming period has already passed.");
-
         uint256 claimBalance = (currentBalance * nominator) / denominator;
 
         // remember that the funds are going to get claimed, hard protection about reentrancy attacks.
@@ -192,7 +190,6 @@ contract ClaimContract {
             "There is already a balance defined for this old address"
         );
         balances[oldAddress] = msg.value;
-        // allOldAdresses.push(oldAddress);
     }
 
     /**
