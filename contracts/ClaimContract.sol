@@ -183,15 +183,7 @@ contract ClaimContract {
 
         emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
     }
-
-    function addBalance(bytes20 oldAddress) external payable {
-        require(
-            balances[oldAddress] == 0,
-            "There is already a balance defined for this old address"
-        );
-        balances[oldAddress] = msg.value;
-    }
-
+    
     /**
      * @dev dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
      * @return amount of DMD that got send to the beneficor.
