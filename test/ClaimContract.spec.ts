@@ -344,13 +344,7 @@ describe('ClaimContract', () => {
 
             let cryptoSol = new CryptoSol(claimContract);
 
-            for (const balance of balances.balances) {
-                const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-                // cryptoSol.addBalance(balance.dmdv3Address, balance.value);
-                await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-                const currentBalance = await claimContract.balances(ripeAddress);
-                expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-            }
+            await cryptoSol.fillBalances(claimContract, caller, balances.balances);
 
             for (const balance of balances.balances) {
                 let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
@@ -388,28 +382,6 @@ describe('ClaimContract', () => {
         });
 
         describe("balance", async function () {
-
-            it('should correctly add balances', async () => {
-                const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-                const claimContractAddress = await claimContract.getAddress();
-                const caller = signers[0];
-                const balances = getTestBalances();
-
-                let expectedTotalBalance = ethers.toBigInt('0');
-
-                for (const balance of balances) {
-
-                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-                    await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-                    const currentBalance = await claimContract.balances(ripeAddress);
-                    expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-                }
-
-                const totalBalance = await ethers.provider.getBalance(claimContractAddress);
-                expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-            });
 
             it('fill() a balance testset', async () => {
                 let deployFreshFixtureForBalanceTest = () => deployFixtureWithNoPrefix();
@@ -482,7 +454,9 @@ describe('ClaimContract', () => {
             });
 
             it("rejecting double add balances for defined DMD address", async () => {
-                await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.rejectedWith("There is already a balance defined for this old address");
+
+                const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+                await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.revertedWithCustomError(claimContract, "FillErrorAccountAlreadyDefined");
             });
 
             it("DMD address building from ripe.", async () => {
