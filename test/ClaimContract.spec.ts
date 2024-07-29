@@ -104,7 +104,7 @@ describe('ClaimContract', () => {
     });
 
     describe("deployment", () => {
-       
+
         it('should deploy contract', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
@@ -144,7 +144,7 @@ describe('ClaimContract', () => {
                 '0x',
                 '0x0', // <-- First timestamp in the past.
                 dilluteTimestamps.dillute1,
-                dilluteTimestamps.dillute3                
+                dilluteTimestamps.dillute3
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp1");
 
             await expect(contractFactory.deploy(
@@ -153,7 +153,7 @@ describe('ClaimContract', () => {
                 '0x',
                 dilluteTimestamps.dillute2,
                 dilluteTimestamps.dillute1, // <-- wrong order
-                dilluteTimestamps.dillute3                
+                dilluteTimestamps.dillute3
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp2");
 
 
@@ -161,7 +161,7 @@ describe('ClaimContract', () => {
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
                 '0x',
-                dilluteTimestamps.dillute1, 
+                dilluteTimestamps.dillute1,
                 dilluteTimestamps.dillute3,
                 dilluteTimestamps.dillute2 // <-- wrong order
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp3");
@@ -486,18 +486,18 @@ describe('ClaimContract', () => {
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
-            let totalAmountInClaimingPot: bigint = BigInt(0);  
-    
+            let totalAmountInClaimingPot: bigint = BigInt(0);
+
             //const ONE_DAY = 86400n;
             //const ETHER = BigInt(10n ** 18n);
-    
+
             beforeEach(async function () {
 
-                
+
             });
-    
+
             it("should dilute balances and pay out correctly", async function () {
-    
+
                 [sponsor] = await ethers.getSigners();
                 let testBalances = getTestBalances_dillution();
                 claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
@@ -505,7 +505,7 @@ describe('ClaimContract', () => {
                 let sol = new CryptoSol(claimContract);
                 // sol.setLogDebug(true);
 
-                totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
+                totalAmountInClaimingPot = await sol.fillBalances(claimContract, sponsor, testBalances.balances);
 
                 // Try to dilute before first dilution period - should fail
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(
@@ -518,7 +518,7 @@ describe('ClaimContract', () => {
                 let claimingBalances = getTestBalances_dillution();
                 const [claimersEarly, claimersMid, claimersLate, claimersNever] = claimingBalances.balances;
 
-                
+
                 let claimPreconfiguredBalance = async (balance: ClaimingBalance) => {
                     // console.log("claiming:", balance);
                     await sol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "");
@@ -553,7 +553,7 @@ describe('ClaimContract', () => {
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
 
                 // dilute 2 + 3 are still not triggerable.
-                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract,"DiluteTimeNotReached");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
                 await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
 
 
@@ -561,9 +561,9 @@ describe('ClaimContract', () => {
                 // both will get 50% each.
 
                 // not payed out coins is the dilution factor of 25% of the total balance of all remaining claims.
-                
+
                 const getRemainingBalance = (notClaimedBalances: BalanceV3[]) => {
-                    return notClaimedBalances.map(b=> BigInt(b.value)).reduce((a,b) => a + b);
+                    return notClaimedBalances.map(b => BigInt(b.value)).reduce((a, b) => a + b);
                 }
 
                 const remainingBalanceToClaimAfterEarly = getRemainingBalance([claimersMid, claimersLate, claimersNever]);
@@ -576,7 +576,7 @@ describe('ClaimContract', () => {
                 let expectedReinsertPotBalance1 = expectedTotalPotBalances1 / BigInt(2);
 
                 // we can calculate expectations for dilute events already here.
-                
+
                 // at the second event, it is 50%. 
                 // 25% already got claimed,
                 // so it is another 25%, and we have to divide 4 again.
@@ -594,11 +594,11 @@ describe('ClaimContract', () => {
                 // expectedDaoBalance1
                 expect(expectedDaoBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
                 expect(expectedReinsertPotBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
-                
+
                 await claimPreconfiguredBalance(claimersMid);
 
                 let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
-                
+
                 // claimer receive 75%.
                 let expectedClaimerBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
                 expect(claimerBalanceMid).to.be.equal(expectedClaimerBalanceMid);
@@ -625,7 +625,7 @@ describe('ClaimContract', () => {
                 // check the balances of the DAO and reinsert contracts.
                 expect(expectedDaoBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
                 expect(expectedReinsertPotBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
-                
+
                 // Try to dilute after all dilutions - should still fail, there most not be any reset.
                 // NOTE: if someone sends coin to that contract, this funds will be lost.
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
@@ -633,6 +633,6 @@ describe('ClaimContract', () => {
                 await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
             });
         });
-    
+
     });
 });
