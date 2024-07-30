@@ -368,17 +368,6 @@ describe('ClaimContract', () => {
 
                 return { claimContract };
             }
-
-            it('should validate signature defined prefix and postfix', async () => {
-                const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
-
-                const claimToAddress = "0x9edD67cCFd52211d769A7A09b989d148749B1d10";
-                const signatureBase64 = "IIQYAZ+4Tf7bdw9UX72adTvH80vz2igEABRnwElSy1ZvZGICcqX8bYw6e9LZ+QPrKW4VIJrA9cZJhR3cSCt8BAc=";
-
-                const suffixString = ' test suffix 123';
-
-                await verifySignature(claimContract, claimToAddress, signatureBase64, suffixString);
-            }).skip() // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
         });
 
         describe("balance", async function () {
