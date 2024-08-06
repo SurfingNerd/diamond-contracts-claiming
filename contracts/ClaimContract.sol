@@ -1,4 +1,4 @@
-
+// 
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
@@ -101,6 +101,9 @@ contract ClaimContract {
 
     /// @dev Claim Error: Signature does not match
     error ClaimErrorSignatureMissmatch();
+
+    /// @dev Provided v value is invalid for Ethereum signatures.
+    error CryptoInvalidV();
 
     event Claim(
         bytes20 indexed _from,
@@ -295,8 +298,9 @@ contract ClaimContract {
         bytes32 _r,
         bytes32 _s
     ) public view returns (bool) {
-        require(_v >= 27 && _v <= 30, "v invalid");
 
+        if (_v < 27 || _v > 30) revert CryptoInvalidV();
+        
         /*
           ecrecover() returns an Eth address rather than a public key, so
           we must do the same to compare.
