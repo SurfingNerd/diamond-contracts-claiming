@@ -104,7 +104,7 @@ describe('ClaimContract', () => {
     });
 
     describe("deployment", () => {
-       
+
         it('should deploy contract', async () => {
             const contractFactory = await ethers.getContractFactory("ClaimContract");
 
@@ -144,7 +144,7 @@ describe('ClaimContract', () => {
                 '0x',
                 '0x0', // <-- First timestamp in the past.
                 dilluteTimestamps.dillute1,
-                dilluteTimestamps.dillute3                
+                dilluteTimestamps.dillute3
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp1");
 
             await expect(contractFactory.deploy(
@@ -153,7 +153,7 @@ describe('ClaimContract', () => {
                 '0x',
                 dilluteTimestamps.dillute2,
                 dilluteTimestamps.dillute1, // <-- wrong order
-                dilluteTimestamps.dillute3                
+                dilluteTimestamps.dillute3
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp2");
 
 
@@ -161,7 +161,7 @@ describe('ClaimContract', () => {
                 lateClaimBeneficorAddress,
                 lateClaimBeneficorDAO,
                 '0x',
-                dilluteTimestamps.dillute1, 
+                dilluteTimestamps.dillute1,
                 dilluteTimestamps.dillute3,
                 dilluteTimestamps.dillute2 // <-- wrong order
             )).to.be.revertedWithCustomError(contractFactory, "InitializationErrorDiluteTimestamp3");
@@ -344,13 +344,7 @@ describe('ClaimContract', () => {
 
             let cryptoSol = new CryptoSol(claimContract);
 
-            for (const balance of balances.balances) {
-                const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-                // cryptoSol.addBalance(balance.dmdv3Address, balance.value);
-                await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-                const currentBalance = await claimContract.balances(ripeAddress);
-                expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-            }
+            await cryptoSol.fillBalances(claimContract, caller, balances.balances);
 
             for (const balance of balances.balances) {
                 let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
@@ -374,42 +368,9 @@ describe('ClaimContract', () => {
 
                 return { claimContract };
             }
-
-            it('should validate signature defined prefix and postfix', async () => {
-                const { claimContract } = await helpers.loadFixture(deployWithPrefixFixture);
-
-                const claimToAddress = "0x9edD67cCFd52211d769A7A09b989d148749B1d10";
-                const signatureBase64 = "IIQYAZ+4Tf7bdw9UX72adTvH80vz2igEABRnwElSy1ZvZGICcqX8bYw6e9LZ+QPrKW4VIJrA9cZJhR3cSCt8BAc=";
-
-                const suffixString = ' test suffix 123';
-
-                await verifySignature(claimContract, claimToAddress, signatureBase64, suffixString);
-            }).skip() // skipping: we need proper signatures after remove bitcoin support https://github.com/DMDcoin/diamond-contracts-claiming/issues/22;
         });
 
         describe("balance", async function () {
-
-            it('should correctly add balances', async () => {
-                const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
-
-                const claimContractAddress = await claimContract.getAddress();
-                const caller = signers[0];
-                const balances = getTestBalances();
-
-                let expectedTotalBalance = ethers.toBigInt('0');
-
-                for (const balance of balances) {
-
-                    const ripeAddress = ensure0x(cryptoJS.dmdAddressToRipeResult(balance.dmdv3Address));
-                    await claimContract.connect(caller).addBalance(ripeAddress, { value: balance.value });
-                    expectedTotalBalance = expectedTotalBalance + ethers.toBigInt(balance.value);
-                    const currentBalance = await claimContract.balances(ripeAddress);
-                    expect(currentBalance).to.equal(balance.value, 'Balance of DMDv3 adress matches defined Balance.');
-                }
-
-                const totalBalance = await ethers.provider.getBalance(claimContractAddress);
-                expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
-            });
 
             it('fill() a balance testset', async () => {
                 let deployFreshFixtureForBalanceTest = () => deployFixtureWithNoPrefix();
@@ -482,7 +443,9 @@ describe('ClaimContract', () => {
             });
 
             it("rejecting double add balances for defined DMD address", async () => {
-                await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.rejectedWith("There is already a balance defined for this old address");
+
+                const { claimContract } = await helpers.loadFixture(deployFixtureWithNoPrefix);
+                await expect(runAddAndClaimTests(getTestBalances_DMD_cli_same_address())).to.revertedWithCustomError(claimContract, "FillErrorAccountAlreadyDefined");
             });
 
             it("DMD address building from ripe.", async () => {
@@ -512,18 +475,18 @@ describe('ClaimContract', () => {
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
-            let totalAmountInClaimingPot: bigint = BigInt(0);  
-    
+            let totalAmountInClaimingPot: bigint = BigInt(0);
+
             //const ONE_DAY = 86400n;
             //const ETHER = BigInt(10n ** 18n);
-    
+
             beforeEach(async function () {
 
-                
+
             });
-    
+
             it("should dilute balances and pay out correctly", async function () {
-    
+
                 [sponsor] = await ethers.getSigners();
                 let testBalances = getTestBalances_dillution();
                 claimContract = (await deployFixture(testBalances.messagePrefix)).claimContract;
@@ -531,7 +494,7 @@ describe('ClaimContract', () => {
                 let sol = new CryptoSol(claimContract);
                 // sol.setLogDebug(true);
 
-                totalAmountInClaimingPot = await sol.fillBalances(claimContract,sponsor, testBalances.balances);
+                totalAmountInClaimingPot = await sol.fillBalances(claimContract, sponsor, testBalances.balances);
 
                 // Try to dilute before first dilution period - should fail
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(
@@ -544,7 +507,7 @@ describe('ClaimContract', () => {
                 let claimingBalances = getTestBalances_dillution();
                 const [claimersEarly, claimersMid, claimersLate, claimersNever] = claimingBalances.balances;
 
-                
+
                 let claimPreconfiguredBalance = async (balance: ClaimingBalance) => {
                     // console.log("claiming:", balance);
                     await sol.claim(balance.dmdv3Address, balance.dmdv4Address, balance.signature, "");
@@ -561,7 +524,7 @@ describe('ClaimContract', () => {
                 expect(claimerBalanceEarly).to.be.equal(BigInt(claimersEarly.value));
 
                 // a second claim must not be possible.
-                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWith("provided address does not have a balance.");
+                await expect(sol.claim(claimersEarly.dmdv3Address, claimersEarly.dmdv4Address, claimersEarly.signature, "")).to.be.revertedWithCustomError(claimContract, "ClaimErrorNoBalance");
 
                 // we can not execute any of the dillution functions, because not enough time passed by.
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
@@ -579,7 +542,7 @@ describe('ClaimContract', () => {
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
 
                 // dilute 2 + 3 are still not triggerable.
-                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract,"DiluteTimeNotReached");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
                 await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
 
 
@@ -587,9 +550,9 @@ describe('ClaimContract', () => {
                 // both will get 50% each.
 
                 // not payed out coins is the dilution factor of 25% of the total balance of all remaining claims.
-                
+
                 const getRemainingBalance = (notClaimedBalances: BalanceV3[]) => {
-                    return notClaimedBalances.map(b=> BigInt(b.value)).reduce((a,b) => a + b);
+                    return notClaimedBalances.map(b => BigInt(b.value)).reduce((a, b) => a + b);
                 }
 
                 const remainingBalanceToClaimAfterEarly = getRemainingBalance([claimersMid, claimersLate, claimersNever]);
@@ -602,7 +565,7 @@ describe('ClaimContract', () => {
                 let expectedReinsertPotBalance1 = expectedTotalPotBalances1 / BigInt(2);
 
                 // we can calculate expectations for dilute events already here.
-                
+
                 // at the second event, it is 50%. 
                 // 25% already got claimed,
                 // so it is another 25%, and we have to divide 4 again.
@@ -620,11 +583,11 @@ describe('ClaimContract', () => {
                 // expectedDaoBalance1
                 expect(expectedDaoBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
                 expect(expectedReinsertPotBalance1).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
-                
+
                 await claimPreconfiguredBalance(claimersMid);
 
                 let claimerBalanceMid = await ethers.provider.getBalance(claimersMid.dmdv4Address);
-                
+
                 // claimer receive 75%.
                 let expectedClaimerBalanceMid = BigInt(claimersMid.value) * BigInt(3) / BigInt(4);
                 expect(claimerBalanceMid).to.be.equal(expectedClaimerBalanceMid);
@@ -651,7 +614,7 @@ describe('ClaimContract', () => {
                 // check the balances of the DAO and reinsert contracts.
                 expect(expectedDaoBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorDAO));
                 expect(expectedReinsertPotBalance3).to.be.equal(await ethers.provider.getBalance(lateClaimBeneficorAddress));
-                
+
                 // Try to dilute after all dilutions - should still fail, there most not be any reset.
                 // NOTE: if someone sends coin to that contract, this funds will be lost.
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
@@ -659,6 +622,6 @@ describe('ClaimContract', () => {
                 await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
             });
         });
-    
+
     });
 });

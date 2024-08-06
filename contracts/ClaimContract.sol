@@ -1,3 +1,4 @@
+// 
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
@@ -81,7 +82,28 @@ contract ClaimContract {
     error FillErrorValueRequired();
 
     /// @dev Fill Error: number of accounts need to match number of balances.
-    error FillErrorNumberOfAccountsMissmatch(); 
+    error FillErrorNumberOfAccountsMissmatch();
+
+    /// @dev Fill Error: number of accounts need to match number of balances.
+    error FillErrorAccountZero();
+
+    /// @dev Fill Error: cannot add account with Zero Balance.
+    error FillErrorBalanceZero();
+
+    /// @dev Fill Error: cannot add account with Zero Balance.
+    error FillErrorAccountAlreadyDefined();
+
+    /// @dev Fill Error: The payment for this function must be equal to the sum of all balances.
+    error FillErrorBalanceSumError();
+
+    /// @dev Claim Error: provided address does not have a balance.
+    error ClaimErrorNoBalance();
+
+    /// @dev Claim Error: Signature does not match
+    error ClaimErrorSignatureMissmatch();
+
+    /// @dev Provided v value is invalid for Ethereum signatures.
+    error CryptoInvalidV();
 
     event Claim(
         bytes20 indexed _from,
@@ -126,20 +148,14 @@ contract ClaimContract {
         uint256 totalBalanceAdded = 0;
 
         for (uint256 i = 0; i < _accounts.length; ++i) {
-            require(_accounts[i] != bytes20(address(0)), "Account cannot be 0x0!");
-            require(_balances[i] != 0, "Balance cannot be 0!");
-            require(
-                balances[_accounts[i]] == 0,
-                "Balance is defined multiple times for an account."
-            );
+            if (_accounts[i] == bytes20(address(0))) revert FillErrorAccountZero();
+            if (_balances[i] == 0) revert FillErrorBalanceZero();
+            if (balances[_accounts[i]] != 0) revert FillErrorAccountAlreadyDefined(); 
             totalBalanceAdded += _balances[i];
             balances[_accounts[i]] = _balances[i];
         }
 
-        require(
-            msg.value == totalBalanceAdded,
-            "The payment for this function must be equal to the sum of all balances."
-        );
+        if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
     }
 
     function claim(
@@ -156,19 +172,12 @@ contract ClaimContract {
 
         //if already claimed, it just returns.
         uint256 currentBalance = balances[oldAddress];
-        require(currentBalance > 0, "provided address does not have a balance.");
+        if (currentBalance == 0) revert ClaimErrorNoBalance();
 
         // verify if the signature matches to the provided pubKey here.
-        require(
-            claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s),
-            "Signature does not match for this claiming procedure."
-        );
+        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s)) revert ClaimErrorSignatureMissmatch();
 
         (uint256 nominator, uint256 denominator) = getCurrentDilutedClaimFactor();
-
-        // the nominator is 0 if the claim period passed.
-        require(nominator > 0, "claiming period has already passed.");
-
         uint256 claimBalance = (currentBalance * nominator) / denominator;
 
         // remember that the funds are going to get claimed, hard protection about reentrancy attacks.
@@ -177,16 +186,7 @@ contract ClaimContract {
 
         emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
     }
-
-    function addBalance(bytes20 oldAddress) external payable {
-        require(
-            balances[oldAddress] == 0,
-            "There is already a balance defined for this old address"
-        );
-        balances[oldAddress] = msg.value;
-        // allOldAdresses.push(oldAddress);
-    }
-
+    
     /**
      * @dev dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
      * @return amount of DMD that got send to the beneficor.
@@ -298,8 +298,9 @@ contract ClaimContract {
         bytes32 _r,
         bytes32 _s
     ) public view returns (bool) {
-        require(_v >= 27 && _v <= 30, "v invalid");
 
+        if (_v < 27 || _v > 30) revert CryptoInvalidV();
+        
         /*
           ecrecover() returns an Eth address rather than a public key, so
           we must do the same to compare.
