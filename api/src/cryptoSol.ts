@@ -114,15 +114,6 @@ export class CryptoSol {
     return new TextDecoder("utf-8").decode(buffer);
   }
 
-  public async addBalance(dmdV3Address: string, value: string) {
-
-    const signers = await ethers.getSigners();
-    const fromAccount = signers[0];
-    const ripe = this.cryptoJS.dmdAddressToRipeResult(dmdV3Address);
-
-    return (await this.instance.connect(fromAccount).addBalance(ensure0x(ripe), { value: value })).wait();
-  }
-
   // public async claim(dmdv3Address: string, payoutAddress: string, signature: string ) {
   //   ensurePrefixCache()
   // }
@@ -141,8 +132,10 @@ export class CryptoSol {
   }
 
 
-  public async fillBalances(claimContract: ClaimContract, sponsor: SignerWithAddress, balances: BalanceV3[]) {
+  public async fillBalances(sponsor: SignerWithAddress, balances: BalanceV3[]) {
 
+
+    
       let totalBalance = ethers.toBigInt('0');
       let accounts: string[] = [];
       let balancesForContract: string[] = [];
@@ -156,7 +149,7 @@ export class CryptoSol {
       // console.log(accounts);
       // console.log(balancesForContract);
       // console.log(totalBalance);
-      await (await claimContract.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
+      await (await this.instance.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
       
       // console.log("result status", txResult?.status);
       //console.log(await txResult?.getResult());
