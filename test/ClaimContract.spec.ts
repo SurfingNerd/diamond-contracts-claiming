@@ -344,7 +344,7 @@ describe('ClaimContract', () => {
 
             let cryptoSol = new CryptoSol(claimContract);
 
-            await cryptoSol.fillBalances(claimContract, caller, balances.balances);
+            await cryptoSol.fillBalances(caller, balances.balances);
 
             for (const balance of balances.balances) {
                 let balanceBeforeClaim = await ethers.provider.getBalance(balance.dmdv4Address);
@@ -382,7 +382,7 @@ describe('ClaimContract', () => {
                 let cryptoSol = new CryptoSol(claimContract);
 
 
-                let expectedTotalBalance = await cryptoSol.fillBalances(claimContract, caller, testbalances);
+                let expectedTotalBalance = await cryptoSol.fillBalances(caller, testbalances);
 
                 const totalBalance = await ethers.provider.getBalance(await claimContract.getAddress());
                 expect(totalBalance).to.equal(expectedTotalBalance, 'Balance of contract should be the total of all added funds.');
@@ -494,7 +494,7 @@ describe('ClaimContract', () => {
                 let sol = new CryptoSol(claimContract);
                 // sol.setLogDebug(true);
 
-                totalAmountInClaimingPot = await sol.fillBalances(claimContract, sponsor, testBalances.balances);
+                totalAmountInClaimingPot = await sol.fillBalances(sponsor, testBalances.balances);
 
                 // Try to dilute before first dilution period - should fail
                 await expect(claimContract.dilute1()).to.be.revertedWithCustomError(
