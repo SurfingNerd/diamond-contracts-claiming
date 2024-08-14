@@ -473,8 +473,10 @@ describe('ClaimContract', () => {
         });
 
         describe("regression: problematic addresses", async () =>  {
-            // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
-            await runAddAndClaimTests(getTestBalancesAlpha3());
+            it("regression: problematic addresses", async() => {
+                // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
+                await runAddAndClaimTests(getTestBalancesAlpha3());
+            });
         });
             
         describe("Dilution", function () {
