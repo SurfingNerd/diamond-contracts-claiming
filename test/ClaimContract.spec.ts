@@ -10,7 +10,7 @@ import { ClaimContract } from "../typechain-types";
 import { CryptoJS } from "../api/src/cryptoJS";
 import { ensure0x, hexToBuf, remove0x, stringToUTF8Hex } from "../api/src/cryptoHelpers";
 import { getTestSignatures } from "./fixtures/signature";
-import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution } from "./fixtures/balances";
+import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution, getTestBalancesAlpha3 } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
 
@@ -472,6 +472,11 @@ describe('ClaimContract', () => {
             });
         });
 
+        describe("regression: problematic addresses", async () =>  {
+            // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
+            await runAddAndClaimTests(getTestBalancesAlpha3());
+        });
+            
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
