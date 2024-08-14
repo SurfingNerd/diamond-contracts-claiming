@@ -10,7 +10,8 @@
     "coverage": "export SOLIDITY_COVERAGE=true && npx hardhat coverage",
     "test-deploy": "ts-node scripts/deploy-raw.ts",
     "test-deploy-and-fill": "ts-node scripts/test-fill.ts",
-    "test-claim": "ts-node scripts/test-claim.ts"
+    "test-claim": "ts-node scripts/test-claim.ts",
+    "fill-alpha3": "ts-node scripts/fill-alpha3.ts"
   },
   "repository": {
     "type": "git",
