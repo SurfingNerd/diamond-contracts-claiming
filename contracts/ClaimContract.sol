@@ -1,6 +1,10 @@
 // 
 pragma solidity >=0.8.1 <0.9.0;
 
+
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+
 contract ClaimContract {
     enum AddressType {
         LegacyCompressed
@@ -312,8 +316,14 @@ contract ClaimContract {
         /* Create and hash the claim message text */
         bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _postFix);
 
-        /* Verify the public key */
-        return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
+        (address recovered, ECDSA.RecoverError err, bytes32 errArgs) =  ECDSA.tryRecover(messageHash, _v, _r, _s);
+
+        if (err ==  ECDSA.RecoverError.NoError) {
+            return pubKeyEthAddr == recovered;
+        }
+
+        return false;
+
     }
 
     function getDilutionTimestamp1() public view returns (uint256) {
