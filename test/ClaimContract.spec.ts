@@ -472,8 +472,8 @@ describe('ClaimContract', () => {
             });
         });
 
-        describe("regression: problematic addresses", async () =>  {
-            it("regression: problematic addresses", async() => {
+        describe("regression:", async () =>  {
+            it("problematic addresses", async() => {
                 // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
                 await runAddAndClaimTests(getTestBalancesAlpha3());
             });
