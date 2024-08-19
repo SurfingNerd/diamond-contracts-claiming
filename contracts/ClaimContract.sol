@@ -172,7 +172,7 @@ contract ClaimContract {
         bytes32 _s
     ) external {
         //retrieve the oldAddress out of public key.
-        bytes20 oldAddress = publicKeyToBitcoinAddress(_pubKeyX, _pubKeyY);
+        bytes20 oldAddress = publicKeyToDMDAddress(_pubKeyX, _pubKeyY);
 
         //if already claimed, it just returns.
         uint256 currentBalance = balances[oldAddress];
@@ -356,7 +356,7 @@ contract ClaimContract {
     /// @param _publicKeyX X coordinate of the ECDSA public key
     /// @param _publicKeyY Y coordinate of the ECDSA public key
     /// @return rawBtcAddress Raw parts of the Bitcoin Style address
-    function publicKeyToBitcoinAddress(
+    function publicKeyToDMDAddress(
         bytes32 _publicKeyX,
         bytes32 _publicKeyY
     ) public pure returns (bytes20 rawBtcAddress) {

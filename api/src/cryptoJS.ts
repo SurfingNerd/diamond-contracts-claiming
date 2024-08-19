@@ -70,7 +70,7 @@ export class CryptoJS {
    * @param x x coordinate of the public key, with prefix 0x
    * @param y y coordinate of the public key, with prefix 0x
    */
-  public publicKeyToBitcoinAddress(publicKey: string): string {
+  public publicKeyToDMDAddress(publicKey: string): string {
     
     // const hash = bitcoinMessage.magicHash(publicKeyBuffer, CryptoJS.getSignaturePrefix(false));
     // const publicKey = secp256k1.publicKeyConvert(publicKeyBuffer, true);
@@ -229,7 +229,7 @@ export class CryptoJS {
 
   public bitcoinAddressEssentialToFullQualifiedAddress(essentialPart: string, addressPrefix = '00') {
 
-    // this.log('PublicKeyToBitcoinAddress:', essentialPart);
+    // this.log('publicKeyToDMDAddress:', essentialPart);
     let result = hexToBuf(essentialPart);
     result = prefixBuf(result, addressPrefix);
     //this.log('with prefix: ' + result.toString('hex'));

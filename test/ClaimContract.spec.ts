@@ -276,7 +276,7 @@ describe('ClaimContract', () => {
 
 
 
-            const essentialPart = await claimContract.publicKeyToBitcoinAddress(
+            const essentialPart = await claimContract.publicKeyToDMDAddress(
                 ensure0x(x.toString('hex')),
                 ensure0x(y.toString('hex'))
             );
@@ -291,7 +291,7 @@ describe('ClaimContract', () => {
             console.log();
             // we are also cross checking the result with the result from the cryptoJS library,
             // (that uses bitcoin payments internaly to verify)
-            const addressFromCryptJS = cryptoJS.publicKeyToBitcoinAddress(publicKeyHex);
+            const addressFromCryptJS = cryptoJS.publicKeyToDMDAddress(publicKeyHex);
             expect(bs58Result).to.equal(addressFromCryptJS);
         });
 
