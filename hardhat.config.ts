@@ -13,7 +13,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "alpha3",
+  defaultNetwork: "local",
   networks: {
     hardhat: {
       accounts: {
