@@ -35,8 +35,17 @@ export class CryptoSol {
     
     let postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, postfixHex);
-    this.log('Claim Message: ' , claimMessage);
+    const claimMessageHex = await this.instance.createClaimMessage(dmdV4Address, postfixHex);
+    this.log('Claiming:');
+    this.log('dmdV3Address:', dmdV3Address);
+    this.log('dmdV4Address:', dmdV3Address);
+    this.log('signature:', signature);
+    this.log('postfix:', postfix);
+    this.log('Claim Message hex: ' , claimMessageHex);
+
+    // convert the hexstring to a string.
+    const claimMessage = hexToBuf(claimMessageHex).toString('utf-8');
+    this.log("claimMessage: ", claimMessage);
 
     let prefixString = await this.prefixString();
     const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, true);
