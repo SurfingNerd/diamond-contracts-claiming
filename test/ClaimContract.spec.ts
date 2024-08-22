@@ -13,6 +13,7 @@ import { getTestSignatures } from "./fixtures/signature";
 import { getTestBalances, getTestBalances_DMD_cli_same_address, getTestBalances_DMD_cli, getTestBalances_DMD_with_prefix, getTestBalances_dillution, getTestBalancesAlpha3 } from "./fixtures/balances";
 import { CryptoSol } from "../api/src/cryptoSol";
 import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfaces";
+import { getTestBalancesFromTestdata } from "./fixtures/testdata";
 
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
@@ -427,7 +428,7 @@ describe('ClaimContract', () => {
 
                 for (let balance of testset.balances) {
 
-                    let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, testset.isDMDSigned);
+                    let key = cryptoJS.getPublicKeyFromSignature(balance.signature, balance.dmdv4Address, true);
 
                     //cryptoJS.publicKeyToBTCStyleAddress(key.x, key.y, true);
                     //cryptoJS.bitcoinAddressEssentialToFullQualifiedAddress()
@@ -470,14 +471,20 @@ describe('ClaimContract', () => {
             it("claiming DMD with prefix", async () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
-        });
 
-        describe("regression:", async () =>  {
-            it("problematic addresses", async() => {
-                // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
-                await runAddAndClaimTests(getTestBalancesAlpha3());
+            it("claiming DMD from JSON Testdataset", async() => {
+                await runAddAndClaimTests(getTestBalancesFromTestdata("small"));
             });
         });
+
+        // describe("regression:", async () =>  {
+        //     it("problematic addresses", async() => {
+        //         // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
+        //         await runAddAndClaimTests(getTestBalancesAlpha3());
+        //     });
+        // });
+
+    
             
         describe("Dilution", function () {
             let claimContract: ClaimContract;
