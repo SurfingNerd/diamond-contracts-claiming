@@ -333,7 +333,7 @@ describe('ClaimContract', () => {
             }
         });
 
-        async function runAddAndClaimTests(testSet: ClaimingDataSet) {
+        async function runAddAndClaimTests(testSet: ClaimingDataSet, debug = false) {
 
             let deployFixtureSpecified = () => {
                 return deployFixture(testSet.messagePrefix);
@@ -344,6 +344,10 @@ describe('ClaimContract', () => {
             const balances = testSet;
 
             let cryptoSol = new CryptoSol(claimContract);
+
+            if (debug) {
+                cryptoSol.setLogDebug(true);
+            }
 
             await cryptoSol.fillBalances(caller, balances.balances);
 
@@ -472,8 +476,18 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
 
-            it("claiming DMD from JSON Testdataset", async() => {
+            it("claiming DMD from JSON: known high x high y public keys", async() => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("small"));
+            });
+
+
+            it("claiming DMD from known low x public keys", async() => {
+                await runAddAndClaimTests(getTestBalancesFromTestdata("known_x_00"), true);
+            });
+
+
+            it("claiming DMD from known low y public keys", async() => {
+                await runAddAndClaimTests(getTestBalancesFromTestdata("known_y_00"), true);
             });
         });
 
