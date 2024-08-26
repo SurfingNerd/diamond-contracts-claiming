@@ -16,6 +16,8 @@ import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfa
 import { getTestBalancesFromTestdata } from "./fixtures/testdata";
 
 
+let runLargeTests = false;
+
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
     let dillute1 = now + (86400 * 2 * 31) + 86400 * 30;
@@ -476,19 +478,30 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
 
-            it("claiming DMD from JSON: known high x high y public keys", async() => {
+            it("claiming DMD from JSON: known high x high y public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("small"));
             });
 
 
-            it("claiming DMD from known low x public keys", async() => {
+            it("claiming DMD from known low x public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("known_x_00"));
             });
 
 
-            it("claiming DMD from known low y public keys", async() => {
+            it("claiming DMD from known low y public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("known_y_00"));
             });
+
+            if (runLargeTests) {
+                it("Claiming DMD large test: balances_1k", async () => {
+                    await runAddAndClaimTests(getTestBalancesFromTestdata("balances_1k"));
+                });
+
+                // it("Claiming DMD large test: balances_100k", async () => {
+                //     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_100k"));
+                // });
+            }
+
         });
 
         // describe("regression:", async () =>  {
@@ -498,8 +511,8 @@ describe('ClaimContract', () => {
         //     });
         // });
 
-    
-            
+
+
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
