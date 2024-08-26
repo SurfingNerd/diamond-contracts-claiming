@@ -74,6 +74,10 @@ export class CryptoSol {
 
   public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer) : Promise<string> {
 
+    this.log("recoverV:", pubKeyX, pubKeyY);
+
+    // trim away leading X.
+
     if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s)) { 
       return "0x1b";
     }
@@ -82,7 +86,7 @@ export class CryptoSol {
       return "0x1c";
     }
 
-    throw Error("Could not match signature");
+    throw Error("Could not match signature, v could not be retrieved.");
   }
 
   public setLogDebug(value: boolean) {
