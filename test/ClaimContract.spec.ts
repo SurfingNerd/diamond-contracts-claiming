@@ -482,12 +482,12 @@ describe('ClaimContract', () => {
 
 
             it("claiming DMD from known low x public keys", async() => {
-                await runAddAndClaimTests(getTestBalancesFromTestdata("known_x_00"), true);
+                await runAddAndClaimTests(getTestBalancesFromTestdata("known_x_00"));
             });
 
 
             it("claiming DMD from known low y public keys", async() => {
-                await runAddAndClaimTests(getTestBalancesFromTestdata("known_y_00"), true);
+                await runAddAndClaimTests(getTestBalancesFromTestdata("known_y_00"));
             });
         });
 
