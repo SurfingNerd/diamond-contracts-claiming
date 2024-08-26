@@ -6,36 +6,37 @@ contract ClaimContract {
         LegacyCompressed
     }
 
+/* ====  CONSTANTS ==== */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
 
-    /* Constants for preparing the claim message text */
+    
     uint8 internal constant ETH_ADDRESS_BYTE_LEN = 20;
     uint8 internal constant ETH_ADDRESS_HEX_LEN = ETH_ADDRESS_BYTE_LEN * 2;
-    uint8 internal constant CLAIM_PARAM_HASH_BYTE_LEN = 12;
-    uint8 internal constant CLAIM_PARAM_HASH_HEX_LEN = CLAIM_PARAM_HASH_BYTE_LEN * 2;
-    
+
     uint256 public constant YEAR_IN_SECONDS = 31536000;
     uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
 
+/* ====  FIELDS ==== */
     uint256 public dilute_s1_75_timestamp;
     uint256 public dilute_s2_50_timestamp;
     uint256 public dilute_s3_0_timestamp;
 
+    /// @dev balances from DMDv3 network that are claimable.
     mapping(bytes20 => uint256) public balances;
 
     /* solhint-disable var-name-mixedcase */
-
-    // tracks if dilution for 75% was executed
+    /// @dev  tracks if dilution for 75% was executed
     bool public dilution_s1_75_executed;
 
-    // tracks if dilution for 50% was executed
+    /// @dev  tracks if dilution for 50% was executed
     bool public dilution_s2_50_executed;
 
-    // tracks if dilution for 0% was executed
+    /// @dev tracks if dilution for 0% was executed
     bool public dilution_s3_0_executed;
-
     /* solhint-enable var-name-mixedcase */
 
+
+    /// @dev the timestamp of the deployment of this contract.
     uint256 public deploymentTimestamp;
 
     address payable public lateClaimBeneficorAddressReinsertPot;
@@ -102,6 +103,7 @@ contract ClaimContract {
     /// @dev Provided v value is invalid for Ethereum signatures.
     error CryptoInvalidV();
 
+    /// @dev Claim event is triggered when a claim was successful.
     event Claim(
         bytes20 indexed _from,
         address _to,
@@ -135,7 +137,9 @@ contract ClaimContract {
         dilute_s3_0_timestamp = _dilute_s3_0_timestamp;
     }
 
+    /// @dev fills the contract with balances from DMD diamonds V3 network. 
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
+        
         //for simplification we only support a one-shot initialisation.
         if (address(this).balance != msg.value) revert FillErrorBalanceDoubleFill();
         if (msg.value == 0) revert FillErrorValueRequired();
@@ -286,6 +290,18 @@ contract ClaimContract {
         return calcHash256(createClaimMessage(_claimToAddr, _postfix));
     }
 
+
+    /**
+     * @dev cryptographic verification if the messages matches
+        @param _claimToAddr receiver address of the claim.,
+        @param _postFix postfix of the message as utf-8 bytes,
+        @param _pubKeyX X coordinate of the ECDSA public key,
+        @param _pubKeyY Y coordinate of the ECDSA public key,
+        @param _v ECDSA v
+        @param _r ECDSA r
+        @param _s ECDSA s
+     * @return bool true if it matches.
+     */
     function claimMessageMatchesSignature(
         address _claimToAddr,
         bytes memory _postFix,
