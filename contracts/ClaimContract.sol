@@ -13,10 +13,7 @@ contract ClaimContract {
     uint8 internal constant ETH_ADDRESS_HEX_LEN = ETH_ADDRESS_BYTE_LEN * 2;
     uint8 internal constant CLAIM_PARAM_HASH_BYTE_LEN = 12;
     uint8 internal constant CLAIM_PARAM_HASH_HEX_LEN = CLAIM_PARAM_HASH_BYTE_LEN * 2;
-
-    uint8 internal constant DIAMOND_SIG_PREFIX_LEN = 24;
-    bytes24 internal constant DIAMOND_SIG_PREFIX_STR = "Diamond Signed Message:\n";
-
+    
     uint256 public constant YEAR_IN_SECONDS = 31536000;
     uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
 
@@ -268,8 +265,8 @@ contract ClaimContract {
 
         return
             abi.encodePacked(
-                DIAMOND_SIG_PREFIX_LEN,
-                DIAMOND_SIG_PREFIX_STR,
+                uint8(24), //24 byte prefix.
+                "Diamond Signed Message:\n",
                 uint8(prefixStr.length) + ETH_ADDRESS_HEX_LEN + 2 + uint8(_postfix.length),
                 prefixStr,
                 addrStr,
