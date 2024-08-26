@@ -16,7 +16,7 @@ import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfa
 import { getTestBalancesFromTestdata } from "./fixtures/testdata";
 
 
-let runLargeTests = false;
+let runLargeTests = true;
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
@@ -497,11 +497,10 @@ describe('ClaimContract', () => {
                     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_1k"));
                 });
 
-                // it("Claiming DMD large test: balances_100k", async () => {
-                //     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_100k"));
-                // });
+                it("Claiming DMD large test: balances_50k", async () => {
+                    await runAddAndClaimTests(getTestBalancesFromTestdata("balances_50k"));
+                });
             }
-
         });
 
         // describe("regression:", async () =>  {
