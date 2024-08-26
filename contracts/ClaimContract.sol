@@ -176,7 +176,8 @@ contract ClaimContract {
         if (currentBalance == 0) revert ClaimErrorNoBalance();
 
         // verify if the signature matches to the provided pubKey here.
-        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s)) revert ClaimErrorSignatureMissmatch();
+        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s))
+            revert ClaimErrorSignatureMissmatch();
 
         (uint256 nominator, uint256 denominator) = getCurrentDilutedClaimFactor();
         uint256 claimBalance = (currentBalance * nominator) / denominator;
