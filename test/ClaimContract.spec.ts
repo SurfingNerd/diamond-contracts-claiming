@@ -16,7 +16,16 @@ import { BalanceV3, ClaimingBalance, ClaimingDataSet } from "../api/data/interfa
 import { getTestBalancesFromTestdata } from "./fixtures/testdata";
 
 
-let runLargeTests = true;
+console.log("Large tests are disabled as default since a lot of CI Pipelines do not allow long running tests.");
+console.log("Specify ENV variable as CLAIMING_TEST_RUN_LARGE=1 to enable large tests.");
+
+let runLargeTests = false;
+
+if (process.env.CLAIMING_TEST_RUN_LARGE) {
+    if (process.env.CLAIMING_TEST_RUN_LARGE == "1" || process.env.CLAIMING_TEST_RUN_LARGE === "true") {
+        runLargeTests = true;
+    }
+}
 
 function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3: number } {
     let now = Math.floor(Date.now() / 1000);
@@ -28,6 +37,7 @@ function getDilluteTimestamps(): { dillute1: number, dillute2: number, dillute3:
 }
 
 describe('ClaimContract', () => {
+
     let signers: SignerWithAddress[];
 
     let lateClaimBeneficorAddress: string;
@@ -478,28 +488,28 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalances_DMD_with_prefix());
             });
 
-            it("claiming DMD from JSON: known high x high y public keys", async () => {
+            it("claiming DMD regression known high x high y public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("small"));
             });
 
 
-            it("claiming DMD from known low x public keys", async () => {
+            it("claiming DMD regression from known low x public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("known_x_00"));
             });
 
 
-            it("claiming DMD from known low y public keys", async () => {
+            it("claiming DMD regression from known low y public keys", async () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("known_y_00"));
             });
 
             if (runLargeTests) {
                 it("Claiming DMD large test: balances_1k", async () => {
                     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_1k"));
-                });
+                }).timeout(60_000); // maximum 1 minutes for this test.
 
                 it("Claiming DMD large test: balances_50k", async () => {
                     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_50k"));
-                });
+                }).timeout(60_000 * 60); // maximum 1 hour for this test.
             }
         });
 
