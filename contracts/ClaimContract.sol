@@ -6,12 +6,8 @@ contract ClaimContract {
 /* ====  CONSTANTS ==== */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
 
-    
     uint8 internal constant ETH_ADDRESS_BYTE_LEN = 20;
     uint8 internal constant ETH_ADDRESS_HEX_LEN = ETH_ADDRESS_BYTE_LEN * 2;
-
-    uint256 public constant YEAR_IN_SECONDS = 31536000;
-    uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
 
 /* ====  FIELDS ==== */
 
@@ -24,7 +20,7 @@ contract ClaimContract {
     uint256 public dilute_s2_50_timestamp;
     
     /// @notice timestamp in UNIX Epoch timestep when the third and final dilution can happen.
-    /// All unclaimed balances will be sent to the DAO and ReinsertPot.
+    /// All remaining unclaimed balances will be sent to the DAO and ReinsertPot.
     uint256 public dilute_s3_0_timestamp;
 
     /// @notice balances from DMDv3 network that are claimable.
