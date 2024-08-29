@@ -552,8 +552,6 @@ describe('ClaimContract', () => {
                     "DiluteTimeNotReached"
                 );
 
-                let now = await claimContract.deploymentTimestamp();
-
                 let claimingBalances = getTestBalances_dillution();
                 const [claimersEarly, claimersMid, claimersLate, claimersNever] = claimingBalances.balances;
 
