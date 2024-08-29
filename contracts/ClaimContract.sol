@@ -121,12 +121,12 @@ contract ClaimContract {
     );
 
     /// @notice creates a new ClaimContract instance that is able to get filled.
-    /// @param _lateClaimBeneficorAddressReinsertPot 
-    /// @param _lateClaimBeneficorAddressDAO 
-    /// @param _prefixStr 
-    /// @param _dilute_s1_75_timestamp 
-    /// @param _dilute_s2_50_timestamp 
-    /// @param _dilute_s3_0_timestamp 
+    /// @param _lateClaimBeneficorAddressReinsertPot address, see field lateClaimBeneficorAddressReinsertPot
+    /// @param _lateClaimBeneficorAddressDAO address, see field lateClaimBeneficorAddressDAO
+    /// @param _prefixStr prefix used for all claim messages, see field prefixStr
+    /// @param _dilute_s1_75_timestamp first dilution UNIX Epoch timestamp, see field dilute_s1_75_timestamp
+    /// @param _dilute_s2_50_timestamp second dilution UNIX Epoch timestamp, see field dilute_s2_50_timestamp
+    /// @param _dilute_s3_0_timestamp third dilution UNIX Epoch timestamp, see field dilute_s3_0_timestamp
     constructor(
         address payable _lateClaimBeneficorAddressReinsertPot,
         address payable _lateClaimBeneficorAddressDAO,
