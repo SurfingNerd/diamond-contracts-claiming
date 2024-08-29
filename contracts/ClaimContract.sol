@@ -106,6 +106,9 @@ contract ClaimContract {
     /// @dev Transfer of @param amount to address @param recipient failed.
     error TransferFailed(address recipient, uint256 amount);
 
+    /// @dev Insufficient balance to transfer the requested amount.
+    error InsufficientBalance();
+
     /// @dev Claim event is triggered when a claim was successful.
     event Claim(
         bytes20 indexed _from,
