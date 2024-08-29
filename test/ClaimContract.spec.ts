@@ -67,42 +67,6 @@ describe('ClaimContract', () => {
         return { claimContract };
     }
 
-    async function verifySignature(claimContract: ClaimContract, claimToAddress: string, signatureBase64: string, postfix: string = '') {
-
-
-        const prefixBytes = await claimContract.prefixStr();
-        const prefixBuffer = hexToBuf(prefixBytes);
-
-        const prefixString = new TextDecoder("utf-8").decode(prefixBuffer);
-
-        const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, prefixString + claimToAddress + postfix, true);
-        const rs = cryptoJS.signatureBase64ToRSV(signatureBase64);
-
-        const txResult1 =
-            await claimContract.claimMessageMatchesSignature(
-                claimToAddress,
-                stringToUTF8Hex(postfix),
-                ensure0x(key.x),
-                ensure0x(key.y),
-                ensure0x('0x1b'),
-                ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex'))
-            );
-
-        const txResult2 =
-            await claimContract.claimMessageMatchesSignature(
-                claimToAddress,
-                stringToUTF8Hex(postfix),
-                ensure0x(key.x),
-                ensure0x(key.y),
-                ensure0x('0x1c'),
-                ensure0x(rs.r.toString('hex')),
-                ensure0x(rs.s.toString('hex'))
-            );
-
-        expect(txResult1 || txResult2).to.be.equal(true, "Claim message did not match the signature");
-    }
-
     before(async () => {
         signers = await ethers.getSigners();
 
@@ -321,30 +285,6 @@ describe('ClaimContract', () => {
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
-        it('JS: should recover public key from signatures, test signatures set.', async () => {
-            // Same test as previous
-            // But with multi signatures of the same key.
-            // in order to cover different signatures variations,
-            // like short S and short R
-
-            // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
-            // passphrase: bit.diamonds
-
-            // signatures created with: https://reinproject.org/bitcoin-signature-tool/#sign
-
-            const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
-            const signaturesBase64 = getTestSignatures();
-
-            for (let index = 0; index < signaturesBase64.length; index++) {
-                const signatureBase64 = signaturesBase64[index];
-                const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message, false);
-
-                expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-                expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
-                expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
-            }
-        });
-
         async function runAddAndClaimTests(testSet: ClaimingDataSet, debug = false) {
 
             let deployFixtureSpecified = () => {
@@ -513,27 +453,11 @@ describe('ClaimContract', () => {
             }
         });
 
-        // describe("regression:", async () =>  {
-        //     it("problematic addresses", async() => {
-        //         // https://github.com/DMDcoin/diamond-dapp-claiming/issues/3
-        //         await runAddAndClaimTests(getTestBalancesAlpha3());
-        //     });
-        // });
-
-
 
         describe("Dilution", function () {
             let claimContract: ClaimContract;
             let sponsor: SignerWithAddress;
             let totalAmountInClaimingPot: bigint = BigInt(0);
-
-            //const ONE_DAY = 86400n;
-            //const ETHER = BigInt(10n ** 18n);
-
-            beforeEach(async function () {
-
-
-            });
 
             it("should dilute balances and pay out correctly", async function () {
 
