@@ -17,8 +17,17 @@ contract ClaimContract {
     uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
 
 /* ====  FIELDS ==== */
+
+    /// @dev timestamp in UNIX Epoch timestep when the first dilution can happen.
+    /// Claimers will only receive 75% of their balance.
     uint256 public dilute_s1_75_timestamp;
+
+    /// @dev timestamp in UNIX Epoch timestep when the second dilution can happen.
+    /// Claimers will only receive 50% of their balance.
     uint256 public dilute_s2_50_timestamp;
+    
+    /// @dev timestamp in UNIX Epoch timestep when the third and final dilution can happen.
+    /// All unclaimed balances will be sent to the DAO and ReinsertPot.
     uint256 public dilute_s3_0_timestamp;
 
     /// @dev balances from DMDv3 network that are claimable.
