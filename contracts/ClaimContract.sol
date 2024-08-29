@@ -152,6 +152,8 @@ contract ClaimContract {
     }
 
     /// @notice fills the contract with balances from DMD diamonds V3 network. 
+    /// @param _accounts array of accounts, only the 20 byte essential part of DMDv3 addresses (no prefix, no checksums0) 
+    /// @param _balances array of balances, index based mapping to @param _accounts
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         
         //for simplification we only support a one-shot initialisation.
