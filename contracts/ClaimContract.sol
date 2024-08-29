@@ -2,9 +2,6 @@
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
-    enum AddressType {
-        LegacyCompressed
-    }
 
 /* ====  CONSTANTS ==== */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
