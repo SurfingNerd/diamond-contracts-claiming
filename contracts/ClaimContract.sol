@@ -18,107 +18,107 @@ contract ClaimContract {
 
 /* ====  FIELDS ==== */
 
-    /// @dev timestamp in UNIX Epoch timestep when the first dilution can happen.
+    /// @notice timestamp in UNIX Epoch timestep when the first dilution can happen.
     /// Claimers will only receive 75% of their balance.
     uint256 public dilute_s1_75_timestamp;
 
-    /// @dev timestamp in UNIX Epoch timestep when the second dilution can happen.
+    /// @notice timestamp in UNIX Epoch timestep when the second dilution can happen.
     /// Claimers will only receive 50% of their balance.
     uint256 public dilute_s2_50_timestamp;
     
-    /// @dev timestamp in UNIX Epoch timestep when the third and final dilution can happen.
+    /// @notice timestamp in UNIX Epoch timestep when the third and final dilution can happen.
     /// All unclaimed balances will be sent to the DAO and ReinsertPot.
     uint256 public dilute_s3_0_timestamp;
 
-    /// @dev balances from DMDv3 network that are claimable.
+    /// @notice balances from DMDv3 network that are claimable.
     mapping(bytes20 => uint256) public balances;
 
     /* solhint-disable var-name-mixedcase */
-    /// @dev  tracks if dilution for 75% was executed
+    /// @notice  tracks if dilution for 75% was executed
     bool public dilution_s1_75_executed;
 
-    /// @dev  tracks if dilution for 50% was executed
+    /// @notice  tracks if dilution for 50% was executed
     bool public dilution_s2_50_executed;
 
-    /// @dev tracks if dilution for 0% was executed
+    /// @notice tracks if dilution for 0% was executed
     bool public dilution_s3_0_executed;
     /* solhint-enable var-name-mixedcase */
 
-
-    /// @dev the timestamp of the deployment of this contract.
-    uint256 public deploymentTimestamp;
-
+    /// @notice address of the reinsert pot that will receive half the diluted funds.
     address payable public lateClaimBeneficorAddressReinsertPot;
 
+    /// @notice address of the DAO address that will receive the other half of the diluted funds.
     address payable public lateClaimBeneficorAddressDAO;
 
-    /// @dev the prefix for the signing message.
+    /// @notice the prefix for the signing message.
     /// A Prefix for the signing message can be used to separate different message between different contracts/networks
     /// e.g.: "claim to testnet" for indicating that this is only a testnet claim.
     /// the prefix is part of the signed message .
     bytes public prefixStr;
 
-    /// @dev dilute event did already happen.
+/* ====  ERRORS ==== */
+    /// @notice dilute event did already happen.
     error DiluteAllreadyHappened();
 
-    /// @dev dilute events need to get execute in the correct order.
+    /// @notice dilute events need to get execute in the correct order.
     error PredecessorDiluteEventNotHappened();
 
-    /// @dev dilute event can only get called after the treshold timestamp is reached. 
+    /// @notice dilute event can only get called after the treshold timestamp is reached. 
     error DiluteTimeNotReached();
 
-    /// @dev constructor argument error: first dilution event must be in the future. 
+    /// @notice constructor argument error: first dilution event must be in the future. 
     error InitializationErrorDiluteTimestamp1();
     
-    /// @dev constructor argument error: second dilution event must be after the first.
+    /// @notice constructor argument error: second dilution event must be after the first.
     error InitializationErrorDiluteTimestamp2();
 
-    /// @dev constructor argument error: third dilution event must be after the second.
+    /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorDiluteTimestamp3();
     
-    /// @dev constructor argument error: third dilution event must be after the second.
+    /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorDaoAddressNull();
     
-    /// @dev constructor argument error: third dilution event must be after the second.
+    /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorReinsertPotAddressNull();
     
-    /// @dev Fill Error: The Claim contract is already filled and cannot get filled a second time.
+    /// @notice Fill Error: The Claim contract is already filled and cannot get filled a second time.
     error FillErrorBalanceDoubleFill();
 
-    /// @dev Fill Error: There must be a value transfered to the ClaimContract.
+    /// @notice Fill Error: There must be a value transfered to the ClaimContract.
     error FillErrorValueRequired();
 
-    /// @dev Fill Error: number of accounts need to match number of balances.
+    /// @notice Fill Error: number of accounts need to match number of balances.
     error FillErrorNumberOfAccountsMissmatch();
 
-    /// @dev Fill Error: number of accounts need to match number of balances.
+    /// @notice Fill Error: number of accounts need to match number of balances.
     error FillErrorAccountZero();
 
-    /// @dev Fill Error: cannot add account with Zero Balance.
+    /// @notice Fill Error: cannot add account with Zero Balance.
     error FillErrorBalanceZero();
 
-    /// @dev Fill Error: cannot add account with Zero Balance.
+    /// @notice Fill Error: cannot add account with Zero Balance.
     error FillErrorAccountAlreadyDefined();
 
-    /// @dev Fill Error: The payment for this function must be equal to the sum of all balances.
+    /// @notice Fill Error: The payment for this function must be equal to the sum of all balances.
     error FillErrorBalanceSumError();
 
-    /// @dev Claim Error: provided address does not have a balance.
+    /// @notice Claim Error: provided address does not have a balance.
     error ClaimErrorNoBalance();
 
-    /// @dev Claim Error: Signature does not match
+    /// @notice Claim Error: Signature does not match
     error ClaimErrorSignatureMissmatch();
 
-    /// @dev Provided v value is invalid for Ethereum signatures.
+    /// @notice Provided v value is invalid for Ethereum signatures.
     error CryptoInvalidV();
 
-    /// @dev Transfer of @param amount to address @param recipient failed.
+    /// @notice Transfer of @param amount to address @param recipient failed.
     error TransferFailed(address recipient, uint256 amount);
 
-    /// @dev Insufficient balance to transfer the requested amount.
+    /// @notice Insufficient balance to transfer the requested amount.
     error InsufficientBalance();
 
-    /// @dev Claim event is triggered when a claim was successful.
+/* ====  EVENTS ==== */
+    /// @notice Claim event is triggered when a claim was successful.
     event Claim(
         bytes20 indexed _from,
         address _to,
@@ -127,6 +127,13 @@ contract ClaimContract {
         uint256 _denominator
     );
 
+    /// @notice creates a new ClaimContract instance that is able to get filled.
+    /// @param _lateClaimBeneficorAddressReinsertPot 
+    /// @param _lateClaimBeneficorAddressDAO 
+    /// @param _prefixStr 
+    /// @param _dilute_s1_75_timestamp 
+    /// @param _dilute_s2_50_timestamp 
+    /// @param _dilute_s3_0_timestamp 
     constructor(
         address payable _lateClaimBeneficorAddressReinsertPot,
         address payable _lateClaimBeneficorAddressDAO,
@@ -145,14 +152,13 @@ contract ClaimContract {
         lateClaimBeneficorAddressDAO = _lateClaimBeneficorAddressDAO;
 
         prefixStr = _prefixStr;
-        deploymentTimestamp = block.timestamp;
 
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
         dilute_s3_0_timestamp = _dilute_s3_0_timestamp;
     }
 
-    /// @dev fills the contract with balances from DMD diamonds V3 network. 
+    /// @notice fills the contract with balances from DMD diamonds V3 network. 
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         
         //for simplification we only support a one-shot initialisation.
@@ -174,6 +180,14 @@ contract ClaimContract {
         if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
     }
 
+    /// @notice Claims the funds from the provided public key to the @param _targetAdress by providing a matching signature.
+    /// @param _targetAdress Ethereum style address where the funds should get claimed to. 
+    /// @param _postfix an optional string postfix that can be added to the message. Useful to work around the limitation that only 32 byte R and S values can be processed.
+    /// @param _pubKeyX ECDSA public key X coordinate
+    /// @param _pubKeyY ECDSA public key X coordinate
+    /// @param _v ECDSA V 
+    /// @param _r ECDSA R (32 byte)
+    /// @param _s ECDSA S (32 byte)
     function claim(
         address payable _targetAdress,
         bytes memory _postfix,
@@ -205,10 +219,8 @@ contract ClaimContract {
         emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
     }
     
-    /**
-     * @dev dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
-     * @return amount of DMD that got send to the beneficor.
-     */
+    /// @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
+    /// @return amount of DMD that got send to the beneficor.
     function dilute1() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
         
@@ -228,7 +240,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
+     * @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute2() external returns (uint256) {
@@ -255,7 +267,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
+     * @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute3() external returns (uint256) {
@@ -271,7 +283,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev returns the hash for the provided claim target address.
+     * @notice returns the hash for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
      * @return bytes32 Bitcoin hash of the claim message.
      */
@@ -296,7 +308,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev returns the hash for the provided claim target address.
+     * @notice returns the hash for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
      * @return bytes32 DMD style hash of the claim message.
      */
@@ -309,7 +321,7 @@ contract ClaimContract {
 
 
     /**
-     * @dev cryptographic verification if the messages matches
+     * @notice cryptographic verification if the messages matches
         @param _claimToAddr receiver address of the claim.,
         @param _postFix postfix of the message as utf-8 bytes,
         @param _pubKeyX X coordinate of the ECDSA public key,
@@ -372,7 +384,7 @@ contract ClaimContract {
         }
     }
 
-    /// @dev returns the essential part of a Bitcoin-style address associated with an ECDSA public key
+    /// @notice returns the essential part of a Bitcoin-style address associated with an ECDSA public key
     /// @param _publicKeyX X coordinate of the ECDSA public key
     /// @param _publicKeyY Y coordinate of the ECDSA public key
     /// @return rawBtcAddress Raw parts of the Bitcoin Style address
@@ -391,7 +403,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev PUBLIC FACING: Derive an Ethereum address from an ECDSA public key
+     * @notice PUBLIC FACING: Derive an Ethereum address from an ECDSA public key
      * @param pubKeyX First  half of uncompressed ECDSA public key
      * @param pubKeyY Second half of uncompressed ECDSA public key
      * @return Derived Eth address
@@ -401,7 +413,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev sha256(sha256(data))
+     * @notice sha256(sha256(data))
      * @param data Data to be hashed
      * @return 32-byte hash
      */
@@ -412,7 +424,7 @@ contract ClaimContract {
     }
 
     /**
-     * @dev calculates the address string representation of the signed address.
+     * @notice calculates the address string representation of the signed address.
      * @param _addr address
      * @return addrStr ethereum address(24 byte)
      */
