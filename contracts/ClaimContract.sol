@@ -103,6 +103,9 @@ contract ClaimContract {
     /// @dev Provided v value is invalid for Ethereum signatures.
     error CryptoInvalidV();
 
+    /// @dev Transfer of @param amount to address @param recipient failed.
+    error TransferFailed(address recipient, uint256 amount);
+
     /// @dev Claim event is triggered when a claim was successful.
     event Claim(
         bytes20 indexed _from,
@@ -184,7 +187,8 @@ contract ClaimContract {
 
         // remember that the funds are going to get claimed, hard protection about reentrancy attacks.
         balances[oldAddress] = 0;
-        _targetAdress.transfer(claimBalance);
+
+        _transferNative(_targetAdress, claimBalance);
 
         emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
     }
@@ -430,12 +434,25 @@ contract ClaimContract {
     }
 
     function _sendDilutedAmounts(uint256 amount) internal {
+
         //diluted amounts are split 50/50 to DAO and ReinsertPot.
         uint256 transferForResinsertPot = amount / 2;
         uint256 transferForDAO = amount - transferForResinsertPot;
 
-        lateClaimBeneficorAddressReinsertPot.transfer(transferForResinsertPot);
-        lateClaimBeneficorAddressDAO.transfer(transferForDAO);
+        _transferNative(lateClaimBeneficorAddressReinsertPot, transferForResinsertPot);
+        _transferNative(lateClaimBeneficorAddressDAO, transferForDAO);
+    }
+
+    function _transferNative(address recipient, uint256 amount) internal {
+        if (address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = recipient.call{ value: amount }("");
+        if (!success) {
+            revert TransferFailed(recipient, amount);
+        }
     }
 
     function _hexStringFromData(
