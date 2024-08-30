@@ -285,6 +285,30 @@ describe('ClaimContract', () => {
             expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
         });
 
+        it('JS: should recover public key from signatures, test signatures set.', async () => {
+            // larger test
+            // But with multi signatures of the same key.
+            // in order to cover different signatures variations,
+            // like short S and short R
+
+            // https://royalforkblog.github.io/2014/08/11/graphical-address-generator/
+            // passphrase: bit.diamonds
+
+            // signatures created with: https://reinproject.org/bitcoin-signature-tool/#sign
+
+            const message = "0x70A830C7EffF19c9Dd81Db87107f5Ea5804cbb3F";
+            const signaturesBase64 = getTestSignatures();
+
+            for (let index = 0; index < signaturesBase64.length; index++) {
+                const signatureBase64 = signaturesBase64[index];
+                const key = cryptoJS.getPublicKeyFromSignature(signatureBase64, message, false);
+
+                expect(key.x).equal("0x5EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
+                expect(key.y).equal("0x99523EB43291A1067FA819AA5A74F30810B19D15F6EDC19C9D8AA525B0F6C683".toLowerCase());
+                expect(key.publicKey).equal("0x035EF44A6382FABDCB62425D68A0C61998881A1417B9ED068513310DBAE8C61040".toLowerCase());
+            }
+        });
+
         async function runAddAndClaimTests(testSet: ClaimingDataSet, debug = false) {
 
             let deployFixtureSpecified = () => {
