@@ -471,7 +471,7 @@ contract ClaimContract {
         }
 
         // solhint-disable-next-line avoid-low-level-calls
-        // slither-disable-next-line low-level-calls
+        //slither-disable-next-line low-level-calls
         (bool success, ) = recipient.call{ value: amount }("");
         if (!success) {
             revert TransferFailed(recipient, amount);
