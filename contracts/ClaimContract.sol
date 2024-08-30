@@ -152,7 +152,8 @@ contract ClaimContract {
     }
 
     /// @notice fills the contract with balances from DMD diamonds V3 network. 
-    /// @param _accounts array of accounts, only the 20 byte essential part of DMDv3 addresses (no prefix, no checksums0) 
+    /// @param _accounts array of accounts, only the 20 byte essential part
+    /// of DMDv3 addresses (no prefix, no checksums0) 
     /// @param _balances array of balances, index based mapping to @param _accounts
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         
@@ -175,9 +176,11 @@ contract ClaimContract {
         if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
     }
 
-    /// @notice Claims the funds from the provided public key to the @param _targetAdress by providing a matching signature.
+    /// @notice Claims the funds from the provided public key to the 
+    /// _targetAdress by providing a matching signature.
     /// @param _targetAdress Ethereum style address where the funds should get claimed to. 
-    /// @param _postfix an optional string postfix that can be added to the message. Useful to work around the limitation that only 32 byte R and S values can be processed.
+    /// @param _postfix an optional string postfix that can be added to the message.
+    /// Useful to work around the limitation that only 32 byte R and S values can be processed.
     /// @param _pubKeyX ECDSA public key X coordinate
     /// @param _pubKeyY ECDSA public key X coordinate
     /// @param _v ECDSA V 
