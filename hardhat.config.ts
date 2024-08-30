@@ -13,7 +13,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "alpha3",
+  defaultNetwork: "local",
   networks: {
     hardhat: {
       accounts: {
@@ -50,7 +50,7 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: {
-    version: "0.8.20",
+    version: "0.8.26",
     settings: {
       optimizer: {
         enabled: true,
@@ -91,6 +91,10 @@ const config: HardhatUserConfig = {
             },
         },
     ],
+},
+mocha: {
+
+  timeout: 60000,
 },
 };
 

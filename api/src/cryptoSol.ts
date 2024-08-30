@@ -35,8 +35,17 @@ export class CryptoSol {
     
     let postfixHex = stringToUTF8Hex(postfix);
 
-    const claimMessage = await this.instance.createClaimMessage(dmdV4Address, postfixHex);
-    this.log('Claim Message: ' , claimMessage);
+    const claimMessageHex = await this.instance.createClaimMessage(dmdV4Address, postfixHex);
+    this.log('Claiming:');
+    this.log('dmdV3Address:', dmdV3Address);
+    this.log('dmdV4Address:', dmdV3Address);
+    this.log('signature:', signature);
+    this.log('postfix:', postfix);
+    this.log('Claim Message hex: ' , claimMessageHex);
+
+    // convert the hexstring to a string.
+    const claimMessage = hexToBuf(claimMessageHex).toString('utf-8');
+    this.log("claimMessage: ", claimMessage);
 
     let prefixString = await this.prefixString();
     const pubkey = this.cryptoJS.getPublicKeyFromSignature(signature,  prefixString + dmdV4Address + postfix, true);
@@ -49,7 +58,7 @@ export class CryptoSol {
     this.log("pub key x:", pubKeyX);
     this.log("pub key y:", pubKeyY);
     
-    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToBitcoinAddress(pubKeyX, pubKeyY);
+    let dmdV3AddressFromSignaturesHex = await this.instance.publicKeyToDMDAddress(pubKeyX, pubKeyY);
 
     this.log('dmdV3AddressFromSignaturesHex:   ', dmdV3AddressFromSignaturesHex);
     this.log('dmdV3AddressFromSignaturesBase58:', base58check.encode(remove0x(dmdV3AddressFromSignaturesHex)));
@@ -65,6 +74,10 @@ export class CryptoSol {
 
   public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer) : Promise<string> {
 
+    this.log("recoverV:", pubKeyX, pubKeyY);
+
+    // trim away leading X.
+
     if (await this.instance.claimMessageMatchesSignature(dmdV4Address, postfixHex, pubKeyX, pubKeyY, "0x1b", r, s)) { 
       return "0x1b";
     }
@@ -73,7 +86,7 @@ export class CryptoSol {
       return "0x1c";
     }
 
-    throw Error("Could not match signature");
+    throw Error("Could not match signature, v could not be retrieved.");
   }
 
   public setLogDebug(value: boolean) {
