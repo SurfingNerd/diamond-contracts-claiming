@@ -72,6 +72,10 @@ export class CryptoSol {
     return receipt;
   }
 
+  public async dilute1() {
+    return await this.instance.dilute1({ gasLimit: 200_000, gasPrice: "1000000000" });
+  }
+
   public async recoverV(dmdV4Address: string, postfixHex: string, pubKeyX: string, pubKeyY: string, r: Buffer, s: Buffer) : Promise<string> {
 
     this.log("recoverV:", pubKeyX, pubKeyY);
