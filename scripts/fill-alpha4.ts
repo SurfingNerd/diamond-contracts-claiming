@@ -129,15 +129,7 @@ async function main() {
     ];
 
     let sponsor = (await ethers.getSigners())[0];
-
-    
     await cryptoSol.fillBalances(sponsor, balances);
-    
-   // await cryptoSol.claim(balanceRow.dmdv3Address, balanceRow.dmdv4Address, balanceRow.signature, "", true
-  //  let signature = "IG8j0HGlWUh4SUpd4hgjFaumIPKybGxAevm35RnMwEkYZ+HWYD0IKODVkldrzfqJWdh+26y4fR5Ihmyzht+FdSM=";
-  //  let dmdV4Address = "0xdd37EA7bA22500A43D28378b62A0fCA89bCCFd6F";
-
-    //await cryptoSol.claim(dmdV3Address, dmdV4Address, signature);
     
     await hre.run("verify:verify", {
         address: claimContractAddress,
