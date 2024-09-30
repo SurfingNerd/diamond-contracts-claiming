@@ -456,6 +456,10 @@ describe('ClaimContract', () => {
                 await runAddAndClaimTests(getTestBalancesFromTestdata("with_postfixes"));
             });
 
+            it("Claiming DMD with long prefix", async () => {
+                await runAddAndClaimTests(getTestBalancesFromTestdata("long_prefix"));
+            });
+
             if (runLargeTests) {
                 it("Claiming DMD large test: balances_1k", async () => {
                     await runAddAndClaimTests(getTestBalancesFromTestdata("balances_1k"));
