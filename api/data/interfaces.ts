@@ -4,6 +4,15 @@ export interface BalanceV3 {
     value: string;
 }
 
+
+export interface BalanceSnapshot {
+    block: number,
+    hash: string,
+    balances: BalanceV3[];
+}
+
+
+
 export interface ClaimingBalance extends BalanceV3 {
     dmdv4Address: string;
     signature: string;

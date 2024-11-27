@@ -162,8 +162,26 @@ export class CryptoSol {
       // console.log(accounts);
       // console.log(balancesForContract);
       // console.log(totalBalance);
-      await (await this.instance.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
+
       
+
+      const fillTx = await (await this.instance.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
+      
+
+      console.log("contract address:", await this.instance.getAddress())
+      if (fillTx ) {
+        const hash = fillTx.hash;
+        console.log("fillTx hash:", hash);
+        const response = await fillTx.getTransaction();
+        if (response) {
+          //console.log("fillTx data:", response.data);
+          console.log("fillTx hash:", hash);
+          console.log("fillTx data length (bytes):", response.data.length / 2);
+        }
+      }
+
+      
+
       // console.log("result status", txResult?.status);
       //console.log(await txResult?.getResult());
       return totalBalance;

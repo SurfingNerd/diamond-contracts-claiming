@@ -105,7 +105,7 @@ export class CryptoJS {
    * @return Buffer with the significant bytes of the public key, not including the version number prefix, or the checksum postfix.
    */
   public dmdAddressToRipeResult(address: string): Buffer {
-    this.log('address:', address);
+    //this.log('address:', address);
     const decoded = bs58check.decode(address);
 
     
