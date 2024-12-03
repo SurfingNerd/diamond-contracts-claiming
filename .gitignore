@@ -3,6 +3,10 @@ cache/
 artifacts/
 .mnemonic
 
+#secrets
+secret-chainz-api-key.txt
+
+
 # Logs
 logs/
 *.log

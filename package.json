@@ -12,6 +12,7 @@
     "test-deploy": "ts-node scripts/deploy-raw.ts",
     "test-deploy-and-fill": "ts-node scripts/test-fill.ts",
     "test-claim": "ts-node scripts/test-claim.ts",
+    "import-from-chain": "ts-node scripts/import-from-chainz.ts",
     "fill-alpha3": "ts-node scripts/fill-alpha3.ts",
     "solhint": "solhint 'contracts/**/*.sol'"
   },
