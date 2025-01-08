@@ -14,6 +14,7 @@
     "test-claim": "ts-node scripts/test-claim.ts",
     "import-from-chain": "ts-node scripts/import-from-chainz.ts",
     "fill-alpha3": "ts-node scripts/fill-alpha3.ts",
+    "fill-beta1": "ts-node scripts/fill-beta1.ts",
     "solhint": "solhint 'contracts/**/*.sol'"
   },
   "repository": {
