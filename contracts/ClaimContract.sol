@@ -49,6 +49,10 @@ contract ClaimContract {
     /// the prefix is part of the signed message .
     bytes public prefixStr;
 
+    /// @dev flag that indicates if the contract was already filled.
+    /// this contract can only get filled once.
+    bool private filled;
+
 /* ====  ERRORS ==== */
     /// @notice dilute event did already happen.
     error DiluteAllreadyHappened();
@@ -149,7 +153,10 @@ contract ClaimContract {
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
         dilute_s3_0_timestamp = _dilute_s3_0_timestamp;
+        filled = false;
     }
+
+
 
     /// @notice fills the contract with balances from DMD diamonds V3 network. 
     /// @param _accounts array of accounts, only the 20 byte essential part
@@ -158,7 +165,7 @@ contract ClaimContract {
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
         
         //for simplification we only support a one-shot initialisation.
-        if (address(this).balance != msg.value) revert FillErrorBalanceDoubleFill();
+        if (filled) revert FillErrorBalanceDoubleFill();
         if (msg.value == 0) revert FillErrorValueRequired();
         if (_accounts.length != _balances.length) revert FillErrorNumberOfAccountsMissmatch();
 
