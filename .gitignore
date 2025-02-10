@@ -1,7 +1,11 @@
 node_modules/
 cache/
 artifacts/
-.mnemonic
+.mnemonic*
+
+#secrets
+secret-chainz-api-key.txt
+
 
 # Logs
 logs/
