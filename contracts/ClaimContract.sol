@@ -181,6 +181,8 @@ contract ClaimContract {
         }
 
         if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
+
+        filled = true;
     }
 
     /// @notice Claims the funds from the provided public key to the
