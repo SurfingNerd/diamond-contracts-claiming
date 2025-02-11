@@ -1,15 +1,14 @@
-// 
+//
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
-
-/* ====  CONSTANTS ==== */
+    /* ====  CONSTANTS ==== */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
 
     uint8 internal constant ETH_ADDRESS_BYTE_LEN = 20;
     uint8 internal constant ETH_ADDRESS_HEX_LEN = ETH_ADDRESS_BYTE_LEN * 2;
 
-/* ====  FIELDS ==== */
+    /* ====  FIELDS ==== */
 
     /// @notice timestamp in UNIX Epoch timestep when the first dilution can happen.
     /// Claimers will only receive 75% of their balance.
@@ -18,7 +17,7 @@ contract ClaimContract {
     /// @notice timestamp in UNIX Epoch timestep when the second dilution can happen.
     /// Claimers will only receive 50% of their balance.
     uint256 public dilute_s2_50_timestamp;
-    
+
     /// @notice timestamp in UNIX Epoch timestep when the third and final dilution can happen.
     /// All remaining unclaimed balances will be sent to the DAO and ReinsertPot.
     uint256 public dilute_s3_0_timestamp;
@@ -49,31 +48,35 @@ contract ClaimContract {
     /// the prefix is part of the signed message .
     bytes public prefixStr;
 
-/* ====  ERRORS ==== */
+    /// @dev flag that indicates if the contract was already filled.
+    /// this contract can only get filled once.
+    bool private filled;
+
+    /* ====  ERRORS ==== */
     /// @notice dilute event did already happen.
     error DiluteAllreadyHappened();
 
     /// @notice dilute events need to get execute in the correct order.
     error PredecessorDiluteEventNotHappened();
 
-    /// @notice dilute event can only get called after the treshold timestamp is reached. 
+    /// @notice dilute event can only get called after the treshold timestamp is reached.
     error DiluteTimeNotReached();
 
-    /// @notice constructor argument error: first dilution event must be in the future. 
+    /// @notice constructor argument error: first dilution event must be in the future.
     error InitializationErrorDiluteTimestamp1();
-    
+
     /// @notice constructor argument error: second dilution event must be after the first.
     error InitializationErrorDiluteTimestamp2();
 
     /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorDiluteTimestamp3();
-    
+
     /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorDaoAddressNull();
-    
+
     /// @notice constructor argument error: third dilution event must be after the second.
     error InitializationErrorReinsertPotAddressNull();
-    
+
     /// @notice Fill Error: The Claim contract is already filled and cannot get filled a second time.
     error FillErrorBalanceDoubleFill();
 
@@ -110,7 +113,7 @@ contract ClaimContract {
     /// @notice Insufficient balance to transfer the requested amount.
     error InsufficientBalance();
 
-/* ====  EVENTS ==== */
+    /* ====  EVENTS ==== */
     /// @notice Claim event is triggered when a claim was successful.
     event Claim(
         bytes20 indexed _from,
@@ -135,11 +138,15 @@ contract ClaimContract {
         uint256 _dilute_s2_50_timestamp,
         uint256 _dilute_s3_0_timestamp
     ) {
-        if (_lateClaimBeneficorAddressReinsertPot == address(0)) revert InitializationErrorReinsertPotAddressNull();
+        if (_lateClaimBeneficorAddressReinsertPot == address(0))
+            revert InitializationErrorReinsertPotAddressNull();
         if (_lateClaimBeneficorAddressDAO == address(0)) revert InitializationErrorDaoAddressNull();
-        if (_dilute_s1_75_timestamp <= block.timestamp) revert InitializationErrorDiluteTimestamp1();
-        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp) revert InitializationErrorDiluteTimestamp2();
-        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp) revert  InitializationErrorDiluteTimestamp3();
+        if (_dilute_s1_75_timestamp <= block.timestamp)
+            revert InitializationErrorDiluteTimestamp1();
+        if (_dilute_s2_50_timestamp <= _dilute_s1_75_timestamp)
+            revert InitializationErrorDiluteTimestamp2();
+        if (_dilute_s3_0_timestamp <= _dilute_s2_50_timestamp)
+            revert InitializationErrorDiluteTimestamp3();
 
         lateClaimBeneficorAddressReinsertPot = _lateClaimBeneficorAddressReinsertPot;
         lateClaimBeneficorAddressDAO = _lateClaimBeneficorAddressDAO;
@@ -149,16 +156,16 @@ contract ClaimContract {
         dilute_s1_75_timestamp = _dilute_s1_75_timestamp;
         dilute_s2_50_timestamp = _dilute_s2_50_timestamp;
         dilute_s3_0_timestamp = _dilute_s3_0_timestamp;
+        filled = false;
     }
 
-    /// @notice fills the contract with balances from DMD diamonds V3 network. 
+    /// @notice fills the contract with balances from DMD diamonds V3 network.
     /// @param _accounts array of accounts, only the 20 byte essential part
-    /// of DMDv3 addresses (no prefix, no checksums0) 
+    /// of DMDv3 addresses (no prefix, no checksums0)
     /// @param _balances array of balances, index based mapping to @param _accounts
     function fill(bytes20[] memory _accounts, uint256[] memory _balances) external payable {
-        
         //for simplification we only support a one-shot initialisation.
-        if (address(this).balance != msg.value) revert FillErrorBalanceDoubleFill();
+        if (filled) revert FillErrorBalanceDoubleFill();
         if (msg.value == 0) revert FillErrorValueRequired();
         if (_accounts.length != _balances.length) revert FillErrorNumberOfAccountsMissmatch();
 
@@ -168,22 +175,24 @@ contract ClaimContract {
         for (uint256 i = 0; i < _accounts.length; ++i) {
             if (_accounts[i] == bytes20(address(0))) revert FillErrorAccountZero();
             if (_balances[i] == 0) revert FillErrorBalanceZero();
-            if (balances[_accounts[i]] != 0) revert FillErrorAccountAlreadyDefined(); 
+            if (balances[_accounts[i]] != 0) revert FillErrorAccountAlreadyDefined();
             totalBalanceAdded += _balances[i];
             balances[_accounts[i]] = _balances[i];
         }
 
         if (msg.value != totalBalanceAdded) revert FillErrorBalanceSumError();
+
+        filled = true;
     }
 
-    /// @notice Claims the funds from the provided public key to the 
+    /// @notice Claims the funds from the provided public key to the
     /// _targetAdress by providing a matching signature.
-    /// @param _targetAdress Ethereum style address where the funds should get claimed to. 
+    /// @param _targetAdress Ethereum style address where the funds should get claimed to.
     /// @param _postfix an optional string postfix that can be added to the message.
     /// Useful to work around the limitation that only 32 byte R and S values can be processed.
     /// @param _pubKeyX ECDSA public key X coordinate
     /// @param _pubKeyY ECDSA public key X coordinate
-    /// @param _v ECDSA V 
+    /// @param _v ECDSA V
     /// @param _r ECDSA R (32 byte)
     /// @param _s ECDSA S (32 byte)
     function claim(
@@ -216,12 +225,12 @@ contract ClaimContract {
 
         emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
     }
-    
+
     /// @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
     /// @return amount of DMD that got send to the beneficor.
     function dilute1() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
-        
+
         if (dilution_s1_75_executed) {
             revert DiluteAllreadyHappened();
         }
@@ -242,11 +251,10 @@ contract ClaimContract {
      * @return amount of DMD that got send to the beneficor.
      */
     function dilute2() external returns (uint256) {
-
         if (block.timestamp < getDilutionTimestamp2()) revert DiluteTimeNotReached();
         if (!dilution_s1_75_executed) revert PredecessorDiluteEventNotHappened();
         if (dilution_s2_50_executed) revert DiluteAllreadyHappened();
-        
+
         dilution_s2_50_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
 
@@ -274,7 +282,7 @@ contract ClaimContract {
         if (dilution_s3_0_executed) revert DiluteAllreadyHappened();
 
         dilution_s3_0_executed = true;
-        
+
         uint256 totalBalance = (payable(address(this))).balance;
         _sendDilutedAmounts(totalBalance);
         return totalBalance;
@@ -317,7 +325,6 @@ contract ClaimContract {
         return calcHash256(createClaimMessage(_claimToAddr, _postfix));
     }
 
-
     /**
      * @notice cryptographic verification if the messages matches
         @param _claimToAddr receiver address of the claim.,
@@ -338,9 +345,8 @@ contract ClaimContract {
         bytes32 _r,
         bytes32 _s
     ) public view returns (bool) {
-
         if (_v < 27 || _v > 30) revert CryptoInvalidV();
-        
+
         /*
           ecrecover() returns an Eth address rather than a public key, so
           we must do the same to compare.
@@ -352,7 +358,7 @@ contract ClaimContract {
         /* Create and hash the claim message text */
         bytes32 messageHash = getHashForClaimMessage(_claimToAddr, _postFix);
 
-         /* Verify the public key */
+        /* Verify the public key */
         return ecrecover(messageHash, _v, _r, _s) == pubKeyEthAddr;
     }
 
@@ -456,7 +462,6 @@ contract ClaimContract {
     }
 
     function _sendDilutedAmounts(uint256 amount) internal {
-
         //diluted amounts are split 50/50 to DAO and ReinsertPot.
         uint256 transferForResinsertPot = amount / 2;
         uint256 transferForDAO = amount - transferForResinsertPot;
