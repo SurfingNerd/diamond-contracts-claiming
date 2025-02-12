@@ -113,6 +113,9 @@ contract ClaimContract {
     /// @notice Insufficient balance to transfer the requested amount.
     error InsufficientBalance();
 
+    /// @notice Invalid public key provided, the public key is not on the ECDSA curve.
+    error InvalidPublicKey();
+
     /* ====  EVENTS ==== */
     /// @notice Claim event is triggered when a claim was successful.
     event Claim(
@@ -314,6 +317,25 @@ contract ClaimContract {
     }
 
     /**
+     * @notice checks if the provided public key is a valid public key.
+     * @param _pubKeyX X coordinate of the ECDSA public key
+     * @param _pubKeyY Y coordinate of the ECDSA public key
+     * @return bool true if it is a valid public key.
+     */
+    function isValidPublicKey(bytes32 _pubKeyX, bytes32 _pubKeyY) public pure returns (bool) {
+        uint256 p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+        uint256 x = uint256(_pubKeyX);
+        uint256 y = uint256(_pubKeyY);
+        if (x == 0 || x >= p || y == 0 || y >= p) {
+            return false;
+        }
+        // Check if the point is on the curve: y^2 = x^3 + 7 (mod p)
+        uint256 lhs = mulmod(y, y, p);
+        uint256 rhs = addmod(mulmod(mulmod(x, x, p), x, p), 7, p);
+        return lhs == rhs;
+    }
+
+    /**
      * @notice returns the hash for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
      * @return bytes32 DMD style hash of the claim message.
@@ -346,6 +368,10 @@ contract ClaimContract {
         bytes32 _s
     ) public view returns (bool) {
         if (_v < 27 || _v > 30) revert CryptoInvalidV();
+
+        if (!isValidPublicKey(_pubKeyX, _pubKeyY)) {
+            revert InvalidPublicKey();
+        }
 
         /*
           ecrecover() returns an Eth address rather than a public key, so
