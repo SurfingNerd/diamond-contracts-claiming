@@ -298,9 +298,9 @@ contract ClaimContract {
     }
 
     /**
-     * @notice returns the hash for the provided claim target address.
+     * @notice returns the claim message for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
-     * @return bytes32 Bitcoin hash of the claim message.
+     * @return bytes memory Encoded claim message.
      */
     function createClaimMessage(
         address _claimToAddr,
