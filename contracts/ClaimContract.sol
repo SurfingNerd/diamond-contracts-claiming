@@ -195,8 +195,8 @@ contract ClaimContract {
     }
 
     /// @notice Claims the funds from the provided public key to the
-    /// _targetAdress by providing a matching signature.
-    /// @param _targetAdress Ethereum style address where the funds should get claimed to.
+    /// _targetAddress by providing a matching signature.
+    /// @param _targetAddress Ethereum style address where the funds should get claimed to.
     /// @param _postfix an optional string postfix that can be added to the message.
     /// Useful to work around the limitation that only 32 byte R and S values can be processed.
     /// @param _pubKeyX ECDSA public key X coordinate
@@ -205,7 +205,7 @@ contract ClaimContract {
     /// @param _r ECDSA R (32 byte)
     /// @param _s ECDSA S (32 byte)
     function claim(
-        address payable _targetAdress,
+        address payable _targetAddress,
         bytes memory _postfix,
         bytes32 _pubKeyX,
         bytes32 _pubKeyY,
@@ -221,7 +221,7 @@ contract ClaimContract {
         if (currentBalance == 0) revert ClaimErrorNoBalance();
 
         // verify if the signature matches to the provided pubKey here.
-        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s))
+        if (!claimMessageMatchesSignature(_targetAddress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s))
             revert ClaimErrorSignatureMissmatch();
 
         (uint256 nominator, uint256 denominator) = getCurrentDilutedClaimFactor();
@@ -230,9 +230,9 @@ contract ClaimContract {
         // remember that the funds are going to get claimed, hard protection about reentrancy attacks.
         balances[oldAddress] = 0;
 
-        _transferNative(_targetAdress, claimBalance);
+        _transferNative(_targetAddress, claimBalance);
 
-        emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
+        emit Claim(oldAddress, _targetAddress, claimBalance, nominator, denominator);
     }
 
     /// @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
