@@ -15,15 +15,15 @@ contract ClaimContract {
 
     /// @notice timestamp in UNIX Epoch timestep when the first dilution can happen.
     /// Claimers will only receive 75% of their balance.
-    uint256 public dilute_s1_75_timestamp;
+    uint256 public immutable dilute_s1_75_timestamp;
 
     /// @notice timestamp in UNIX Epoch timestep when the second dilution can happen.
     /// Claimers will only receive 50% of their balance.
-    uint256 public dilute_s2_50_timestamp;
+    uint256 public immutable dilute_s2_50_timestamp;
 
     /// @notice timestamp in UNIX Epoch timestep when the third and final dilution can happen.
     /// All remaining unclaimed balances will be sent to the DAO and ReinsertPot.
-    uint256 public dilute_s3_0_timestamp;
+    uint256 public immutable dilute_s3_0_timestamp;
 
     /// @notice balances from DMDv3 network that are claimable.
     mapping(bytes20 => uint256) public balances;
@@ -40,10 +40,10 @@ contract ClaimContract {
     /* solhint-enable var-name-mixedcase */
 
     /// @notice address of the reinsert pot that will receive half the diluted funds.
-    address payable public lateClaimBeneficorAddressReinsertPot;
+    address payable public immutable lateClaimBeneficorAddressReinsertPot;
 
     /// @notice address of the DAO address that will receive the other half of the diluted funds.
-    address payable public lateClaimBeneficorAddressDAO;
+    address payable public immutable lateClaimBeneficorAddressDAO;
 
     /// @notice the prefix for the signing message.
     /// A Prefix for the signing message can be used to separate different message between different contracts/networks
