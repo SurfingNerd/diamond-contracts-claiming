@@ -15,15 +15,15 @@ contract ClaimContract {
 
     /// @notice timestamp in UNIX Epoch timestep when the first dilution can happen.
     /// Claimers will only receive 75% of their balance.
-    uint256 public dilute_s1_75_timestamp;
+    uint256 public immutable dilute_s1_75_timestamp;
 
     /// @notice timestamp in UNIX Epoch timestep when the second dilution can happen.
     /// Claimers will only receive 50% of their balance.
-    uint256 public dilute_s2_50_timestamp;
+    uint256 public immutable dilute_s2_50_timestamp;
 
     /// @notice timestamp in UNIX Epoch timestep when the third and final dilution can happen.
     /// All remaining unclaimed balances will be sent to the DAO and ReinsertPot.
-    uint256 public dilute_s3_0_timestamp;
+    uint256 public immutable dilute_s3_0_timestamp;
 
     /// @notice balances from DMDv3 network that are claimable.
     mapping(bytes20 => uint256) public balances;
@@ -40,10 +40,10 @@ contract ClaimContract {
     /* solhint-enable var-name-mixedcase */
 
     /// @notice address of the reinsert pot that will receive half the diluted funds.
-    address payable public lateClaimBeneficorAddressReinsertPot;
+    address payable public immutable lateClaimBeneficorAddressReinsertPot;
 
     /// @notice address of the DAO address that will receive the other half of the diluted funds.
-    address payable public lateClaimBeneficorAddressDAO;
+    address payable public immutable lateClaimBeneficorAddressDAO;
 
     /// @notice the prefix for the signing message.
     /// A Prefix for the signing message can be used to separate different message between different contracts/networks
@@ -57,7 +57,7 @@ contract ClaimContract {
 
     /* ====  ERRORS ==== */
     /// @notice dilute event did already happen.
-    error DiluteAllreadyHappened();
+    error DiluteAlreadyHappened();
 
     /// @notice dilute events need to get execute in the correct order.
     error PredecessorDiluteEventNotHappened();
@@ -195,17 +195,17 @@ contract ClaimContract {
     }
 
     /// @notice Claims the funds from the provided public key to the
-    /// _targetAdress by providing a matching signature.
-    /// @param _targetAdress Ethereum style address where the funds should get claimed to.
+    /// _targetAddress by providing a matching signature.
+    /// @param _targetAddress Ethereum style address where the funds should get claimed to.
     /// @param _postfix an optional string postfix that can be added to the message.
     /// Useful to work around the limitation that only 32 byte R and S values can be processed.
     /// @param _pubKeyX ECDSA public key X coordinate
-    /// @param _pubKeyY ECDSA public key X coordinate
+    /// @param _pubKeyY ECDSA public key Y coordinate
     /// @param _v ECDSA V
     /// @param _r ECDSA R (32 byte)
     /// @param _s ECDSA S (32 byte)
     function claim(
-        address payable _targetAdress,
+        address payable _targetAddress,
         bytes memory _postfix,
         bytes32 _pubKeyX,
         bytes32 _pubKeyY,
@@ -221,7 +221,7 @@ contract ClaimContract {
         if (currentBalance == 0) revert ClaimErrorNoBalance();
 
         // verify if the signature matches to the provided pubKey here.
-        if (!claimMessageMatchesSignature(_targetAdress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s))
+        if (!claimMessageMatchesSignature(_targetAddress, _postfix, _pubKeyX, _pubKeyY, _v, _r, _s))
             revert ClaimErrorSignatureMissmatch();
 
         (uint256 nominator, uint256 denominator) = getCurrentDilutedClaimFactor();
@@ -230,9 +230,9 @@ contract ClaimContract {
         // remember that the funds are going to get claimed, hard protection about reentrancy attacks.
         balances[oldAddress] = 0;
 
-        _transferNative(_targetAdress, claimBalance);
+        _transferNative(_targetAddress, claimBalance);
 
-        emit Claim(oldAddress, _targetAdress, claimBalance, nominator, denominator);
+        emit Claim(oldAddress, _targetAddress, claimBalance, nominator, denominator);
     }
 
     /// @notice dilutes the entitlement after a certain time passed away and sends it to the beneficor (reinsert pot)
@@ -241,7 +241,7 @@ contract ClaimContract {
         if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
 
         if (dilution_s1_75_executed) {
-            revert DiluteAllreadyHappened();
+            revert DiluteAlreadyHappened();
         }
 
         dilution_s1_75_executed = true;
@@ -262,7 +262,7 @@ contract ClaimContract {
     function dilute2() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp2()) revert DiluteTimeNotReached();
         if (!dilution_s1_75_executed) revert PredecessorDiluteEventNotHappened();
-        if (dilution_s2_50_executed) revert DiluteAllreadyHappened();
+        if (dilution_s2_50_executed) revert DiluteAlreadyHappened();
 
         dilution_s2_50_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
@@ -288,7 +288,7 @@ contract ClaimContract {
     function dilute3() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp3()) revert DiluteTimeNotReached();
         if (!dilution_s2_50_executed) revert PredecessorDiluteEventNotHappened();
-        if (dilution_s3_0_executed) revert DiluteAllreadyHappened();
+        if (dilution_s3_0_executed) revert DiluteAlreadyHappened();
 
         dilution_s3_0_executed = true;
 
@@ -298,9 +298,9 @@ contract ClaimContract {
     }
 
     /**
-     * @notice returns the hash for the provided claim target address.
+     * @notice returns the claim message for the provided claim target address.
      * @param _claimToAddr address target address for the claim.
-     * @return bytes32 Bitcoin hash of the claim message.
+     * @return bytes memory Encoded claim message.
      */
     function createClaimMessage(
         address _claimToAddr,
@@ -497,10 +497,10 @@ contract ClaimContract {
 
     function _sendDilutedAmounts(uint256 amount) internal {
         //diluted amounts are split 50/50 to DAO and ReinsertPot.
-        uint256 transferForResinsertPot = amount / 2;
-        uint256 transferForDAO = amount - transferForResinsertPot;
+        uint256 transferForReinsertPot = amount / 2;
+        uint256 transferForDAO = amount - transferForReinsertPot;
 
-        _transferNative(lateClaimBeneficorAddressReinsertPot, transferForResinsertPot);
+        _transferNative(lateClaimBeneficorAddressReinsertPot, transferForReinsertPot);
         _transferNative(lateClaimBeneficorAddressDAO, transferForDAO);
     }
 
