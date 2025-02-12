@@ -200,7 +200,7 @@ contract ClaimContract {
     /// @param _postfix an optional string postfix that can be added to the message.
     /// Useful to work around the limitation that only 32 byte R and S values can be processed.
     /// @param _pubKeyX ECDSA public key X coordinate
-    /// @param _pubKeyY ECDSA public key X coordinate
+    /// @param _pubKeyY ECDSA public key Y coordinate
     /// @param _v ECDSA V
     /// @param _r ECDSA R (32 byte)
     /// @param _s ECDSA S (32 byte)
