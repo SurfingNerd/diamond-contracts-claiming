@@ -1,4 +1,4 @@
-//
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.1 <0.9.0;
 
 contract ClaimContract {
@@ -7,6 +7,9 @@ contract ClaimContract {
 
     uint8 internal constant ETH_ADDRESS_BYTE_LEN = 20;
     uint8 internal constant ETH_ADDRESS_HEX_LEN = ETH_ADDRESS_BYTE_LEN * 2;
+
+    uint256 private constant SECP256K1_N =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
     /* ====  FIELDS ==== */
 
@@ -115,6 +118,9 @@ contract ClaimContract {
 
     /// @notice Invalid public key provided, the public key is not on the ECDSA curve.
     error InvalidPublicKey();
+
+    /// @notice Signature malleability error, S value is too high.
+    error SignatureMalleabilityError();
 
     /* ====  EVENTS ==== */
     /// @notice Claim event is triggered when a claim was successful.
@@ -372,6 +378,8 @@ contract ClaimContract {
         if (!isValidPublicKey(_pubKeyX, _pubKeyY)) {
             revert InvalidPublicKey();
         }
+
+        if (uint256(_s) > SECP256K1_N / 2) revert SignatureMalleabilityError();
 
         /*
           ecrecover() returns an Eth address rather than a public key, so
