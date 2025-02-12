@@ -497,10 +497,10 @@ contract ClaimContract {
 
     function _sendDilutedAmounts(uint256 amount) internal {
         //diluted amounts are split 50/50 to DAO and ReinsertPot.
-        uint256 transferForResinsertPot = amount / 2;
-        uint256 transferForDAO = amount - transferForResinsertPot;
+        uint256 transferForReinsertPot = amount / 2;
+        uint256 transferForDAO = amount - transferForReinsertPot;
 
-        _transferNative(lateClaimBeneficorAddressReinsertPot, transferForResinsertPot);
+        _transferNative(lateClaimBeneficorAddressReinsertPot, transferForReinsertPot);
         _transferNative(lateClaimBeneficorAddressDAO, transferForDAO);
     }
 
