@@ -57,7 +57,7 @@ contract ClaimContract {
 
     /* ====  ERRORS ==== */
     /// @notice dilute event did already happen.
-    error DiluteAllreadyHappened();
+    error DiluteAlreadyHappened();
 
     /// @notice dilute events need to get execute in the correct order.
     error PredecessorDiluteEventNotHappened();
@@ -241,7 +241,7 @@ contract ClaimContract {
         if (block.timestamp < getDilutionTimestamp1()) revert DiluteTimeNotReached();
 
         if (dilution_s1_75_executed) {
-            revert DiluteAllreadyHappened();
+            revert DiluteAlreadyHappened();
         }
 
         dilution_s1_75_executed = true;
@@ -262,7 +262,7 @@ contract ClaimContract {
     function dilute2() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp2()) revert DiluteTimeNotReached();
         if (!dilution_s1_75_executed) revert PredecessorDiluteEventNotHappened();
-        if (dilution_s2_50_executed) revert DiluteAllreadyHappened();
+        if (dilution_s2_50_executed) revert DiluteAlreadyHappened();
 
         dilution_s2_50_executed = true;
         // in dilute 1: after 3 months 25% of the total coins get diluted.
@@ -288,7 +288,7 @@ contract ClaimContract {
     function dilute3() external returns (uint256) {
         if (block.timestamp < getDilutionTimestamp3()) revert DiluteTimeNotReached();
         if (!dilution_s2_50_executed) revert PredecessorDiluteEventNotHappened();
-        if (dilution_s3_0_executed) revert DiluteAllreadyHappened();
+        if (dilution_s3_0_executed) revert DiluteAlreadyHappened();
 
         dilution_s3_0_executed = true;
 

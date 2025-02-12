@@ -535,7 +535,7 @@ describe('ClaimContract', () => {
                 await claimContract.dilute1();
 
                 // but it is only able to be triggered once
-                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAlreadyHappened");
 
                 // dilute 2 + 3 are still not triggerable.
                 await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteTimeNotReached");
@@ -613,9 +613,9 @@ describe('ClaimContract', () => {
 
                 // Try to dilute after all dilutions - should still fail, there most not be any reset.
                 // NOTE: if someone sends coin to that contract, this funds will be lost.
-                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
-                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
-                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAllreadyHappened");
+                await expect(claimContract.dilute1()).to.be.revertedWithCustomError(claimContract, "DiluteAlreadyHappened");
+                await expect(claimContract.dilute2()).to.be.revertedWithCustomError(claimContract, "DiluteAlreadyHappened");
+                await expect(claimContract.dilute3()).to.be.revertedWithCustomError(claimContract, "DiluteAlreadyHappened");
             });
         });
 
