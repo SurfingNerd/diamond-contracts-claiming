@@ -1,0 +1,9 @@
+Transaction:
+0x86cee7589dde4cf2b0e00dae3cc3f50e53bb37a6fc2b733498b5629693158b5a
+
+Total amount:  3879238.7370202923
+Total added:  38784.73068500675
+Total dusted:  765.6685196199988
+Total dusted count: 5403
+Total migration accounts:  5343
+difference:  3839688.3378156656
