@@ -13,7 +13,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "beta1",
+  defaultNetwork: "testnet",
   networks: {
     hardhat: {
       accounts: {
@@ -36,21 +36,8 @@ const config: HardhatUserConfig = {
       hardfork: "istanbul",
       minGasPrice: 1000000000
     },
-    alpha3: {
-      url: "https://alpha3.uniq.domains/rpc",
-      accounts: {
-        count: 10,
-        path: "m/44'/60'/0'/0",
-        mnemonic
-      },
-
-      allowUnlimitedContractSize: true,
-      hardfork: "istanbul",
-      minGasPrice: 1000000000
-    },
-    alpha5: {
-      url: "http://62.171.133.46:55100",
-      //url: "http://127.0.0.1:55100",
+    beta1: {
+      url: "http://62.171.133.46:47272",
       accounts: {
         count: 10,
         path: "m/44'/60'/0'/0",
@@ -61,8 +48,8 @@ const config: HardhatUserConfig = {
       hardfork: "london",
       minGasPrice: 1000000000
     },
-    beta1: {
-      url: "http://62.171.133.46:47272",
+    testnet: {
+      url: "http://62.171.133.46:20100",
       accounts: {
         count: 10,
         path: "m/44'/60'/0'/0",
@@ -114,6 +101,14 @@ const config: HardhatUserConfig = {
                 apiURL: "http://62.171.133.46:4000/api",
                 browserURL: "http://62.171.133.46:4000",
             },
+        },
+        {
+          network: "testnet",
+          chainId: 37373,
+          urls: {
+              apiURL: "http://62.171.133.46:4000/api",
+              browserURL: "http://62.171.133.46:4000",
+          },
         },
     ],
 },
