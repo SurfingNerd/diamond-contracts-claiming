@@ -13,7 +13,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "testnet",
+  defaultNetwork: "mainnet",
   networks: {
     hardhat: {
       accounts: {
@@ -50,6 +50,18 @@ const config: HardhatUserConfig = {
     },
     testnet: {
       url: "http://62.171.133.46:20100",
+      accounts: {
+        count: 10,
+        path: "m/44'/60'/0'/0",
+        mnemonic
+      },
+
+      allowUnlimitedContractSize: true,
+      hardfork: "london",
+      minGasPrice: 1000000000
+    },
+    mainnet: {
+      url: "http://173.249.48.139:10000",
       accounts: {
         count: 10,
         path: "m/44'/60'/0'/0",

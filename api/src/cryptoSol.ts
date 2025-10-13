@@ -94,12 +94,6 @@ export class CryptoSol {
     this.cryptoJS.setLogDebug(value);
   }
 
-  // private async ensurePrefixCache() {
-  //   if (this.prefixCache === '') {
-  //     this.prefixCache = await this.prefixString();
-  //   }
-  // }
-
   private log(message: string, ...params: any[]) {
     if (this.logDebug) {
       console.log(message, ...params);
@@ -147,8 +141,6 @@ export class CryptoSol {
 
   public async fillBalances(sponsor: SignerWithAddress, balances: BalanceV3[]) {
 
-
-    
       let totalBalance = ethers.toBigInt('0');
       let accounts: string[] = [];
       let balancesForContract: string[] = [];
@@ -163,24 +155,19 @@ export class CryptoSol {
       // console.log(balancesForContract);
       // console.log(totalBalance);
 
-      
-
       const fillTx = await (await this.instance.connect(sponsor).fill(accounts, balancesForContract, { value: totalBalance })).wait();
       
-
-      console.log("contract address:", await this.instance.getAddress())
+      this.log("contract address:", await this.instance.getAddress())
       if (fillTx ) {
         const hash = fillTx.hash;
-        console.log("fillTx hash:", hash);
+        this.log("fillTx hash:", hash);
         const response = await fillTx.getTransaction();
         if (response) {
           //console.log("fillTx data:", response.data);
-          console.log("fillTx hash:", hash);
-          console.log("fillTx data length (bytes):", response.data.length / 2);
+          this.log("fillTx hash:", hash);
+          this.log("fillTx data length (bytes):", response.data.length / 2);
         }
       }
-
-      
 
       // console.log("result status", txResult?.status);
       //console.log(await txResult?.getResult());
