@@ -1,0 +1,9 @@
+ ===================
+Balances: 5227
+Total amount: 3881193.364336764
+Total added: 3880428.422867972
+Total dusted: 764.941468790003
+Total dusted count:5406
+Total migration accounts: 5227
+difference: 2.033175405813381e-9
+ ===================

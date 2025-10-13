@@ -16,6 +16,7 @@
     "fill-alpha3": "ts-node scripts/fill-alpha3.ts",
     "fill-beta1": "ts-node scripts/fill-beta1.ts",
     "fill-testnet": "ts-node scripts/fill-testnet.ts",
+    "fill-mainnet": "ts-node scripts/fill-mainnet.ts",
     "dilute2": "ts-node scripts/dilute2.ts",
     "solhint": "solhint 'contracts/**/*.sol'"
   },

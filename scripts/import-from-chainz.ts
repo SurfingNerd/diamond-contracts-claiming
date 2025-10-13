@@ -40,7 +40,14 @@ async function doImport() {
     for (const entry of Object.entries(obj.balances)) {
         const oldV3 = entry[0];
         const value = entry[1] as any;
-        const parsed = Number.parseFloat(value.toString());
+
+        // maybe better accuracy to use BN here.
+        // value to add to make sure everyone get at leas there amount (rounding errors of chainz interface): 10000000000
+        //let eth = web3.utils.toWei("1", "ether");
+        console.log("unparsed: ", oldV3, " : ", value);
+        // chainz does have innaccuracies, so we add a small amount to make sure everyone gets at least what they had for the DMDv4 Airdrop.
+        const parsed = Number.parseFloat((Number.parseFloat(value.toString()) + 0.00000001).toFixed(8));
+
         totalAmount += parsed;
         //console.log(oldV3, " :", parsed);
 
@@ -63,9 +70,10 @@ async function doImport() {
         return (aN == bN) ? 0 : (aN < bN) ? 1 : -1;
     });
 
-    console.log("Balances: ", balances);
 
+    
 
+    console.log("Balances: ", balances.length);
     console.log("Total amount: ", totalAmount);
     console.log("Total added: ", totalAdded);
     console.log("Total dusted: ", totalDusted);
@@ -73,6 +81,24 @@ async function doImport() {
     console.log("Total migration accounts: ", balances.length);
     console.log("difference: ", totalAmount - totalAdded - totalDusted);
     console.log(" ===================");
+
+
+    const report = " ===================" + "\n"
++ "Balances: " + balances.length.toString() + "\n"
++ "Total amount: " + totalAmount.toString() + "\n"
++ "Total added: " + totalAdded.toString() + "\n"
++ "Total dusted: " + totalDusted.toString() + "\n"
++ "Total dusted count:" + totalDustedCount.toString() + "\n"
++ "Total migration accounts: " + balances.length + "\n"
++ "difference: " + (totalAmount - totalAdded - totalDusted).toString()  + "\n"
++ " ===================";
+
+    let csv = "\"address\";\"value\"\n";
+
+
+    for (const bal of balances) {
+        csv += "\"" + bal.dmdv3Address + "\";" + ethers.formatUnits(bal.value, "ether") + "\n";
+    }
     
     let snapshot: BalanceSnapshot = { 
         block: obj.snapshot.height,
@@ -80,10 +106,17 @@ async function doImport() {
         balances: balances
     };
 
-    const snapshotAlpha5 = JSON.stringify(snapshot, null, 2);
+    const snapshotJson = JSON.stringify(snapshot, null, 2);
 
-    const outputPath = "snapshots/snapshot-beta.json";
-    fs.writeFileSync(outputPath, snapshotAlpha5);
+
+    const outputPath = "snapshots/snapshot-mainnet_" + obj.snapshot.height + ".json";
+
+
+    fs.writeFileSync(outputPath, snapshotJson);
+
+    fs.writeFileSync("snapshots/snapshot-mainnet_" + obj.snapshot.height + "_report.txt", report);
+
+    fs.writeFileSync("snapshots/snapshot-mainnet_" + obj.snapshot.height + ".csv", csv);
 
     console.log("Snapshot written to: ", outputPath);
 }
