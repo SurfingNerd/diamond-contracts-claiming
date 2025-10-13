@@ -1,10 +1,11 @@
 {
   "name": "diamond-contracts-claiming",
-  "version": "0.9.0",
+  "version": "4.0.0",
   "description": "claiming contracts",
   "main": "index.js",
   "coverage": "export SOLIDITY_COVERAGE=true && npx hardhat coverage",
   "scripts": {
+    "build": "tsc --build",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test --network hardhat",
     "test-large": "export CLAIMING_TEST_RUN_LARGE=1 && npx hardhat test --network hardhat",
