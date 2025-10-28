@@ -13,7 +13,7 @@ if (fs.existsSync(".mnemonic")) {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "mainnet",
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
       accounts: {
@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
       minGasPrice: 1000000000
     },
     mainnet: {
-      url: "http://173.249.48.139:10000",
+      url: "https://rpc.bit.diamonds",
       accounts: {
         count: 10,
         path: "m/44'/60'/0'/0",
@@ -120,6 +120,14 @@ const config: HardhatUserConfig = {
           urls: {
               apiURL: "http://62.171.133.46:4000/api",
               browserURL: "http://62.171.133.46:4000",
+          },
+        },
+        {
+          network: "mainnet",
+          chainId: 17771,
+          urls: {
+              apiURL: "https://explorer.bit.diamonds/api",
+              browserURL: "https://explorer.bit.diamonds",
           },
         },
     ],
