@@ -18,6 +18,7 @@
     "fill-beta1": "ts-node scripts/fill-beta1.ts",
     "fill-testnet": "ts-node scripts/fill-testnet.ts",
     "fill-mainnet": "ts-node scripts/fill-mainnet.ts",
+    "show-dillute-time": "ts-node scripts/print-dillute-time.ts",
     "dilute2": "ts-node scripts/dilute2.ts",
     "solhint": "solhint 'contracts/**/*.sol'"
   },
