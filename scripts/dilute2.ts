@@ -12,7 +12,7 @@ async function executeDilute2() {
     console.log("using signer address: ", await signer.getAddress());
 
 
-    const contractaddress = "0xe0E6787A55049A90aAa4335D0Ff14fAD26B8e88e";
+    const contractaddress = "0xf3bf614C0EA1D14D998BcDb49Ad1F8f57332Bb42";
 
     
     const contract = ClaimContract__factory.connect(contractaddress, signer);
@@ -20,7 +20,7 @@ async function executeDilute2() {
 
     //const f = contract.interface.getFunction("dilute2");
     
-    const calldata = contract.interface.encodeFunctionData("dilute3");
+    const calldata = contract.interface.encodeFunctionData("dilute2");
     
     console.log("calldata:", calldata);
 
